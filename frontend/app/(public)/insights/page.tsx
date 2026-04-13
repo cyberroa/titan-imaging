@@ -5,12 +5,10 @@ import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
   title: "Industry Insight",
-  description:
-    "Resources on CT/PET installation, equipment sales, and imaging best practices.",
+  description: "Resources on CT/PET installation, equipment sales, and imaging best practices.",
   openGraph: {
     title: "Industry Insight | TITAN IMAGING",
-    description:
-      "Resources on CT/PET installation, equipment sales, and imaging best practices.",
+    description: "Resources on CT/PET installation, equipment sales, and imaging best practices.",
     url: "/insights",
   },
   alternates: {
@@ -74,14 +72,7 @@ export default function InsightsPage() {
     <>
       <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-4 text-center">
         <div className="absolute inset-0 z-0">
-          <Image
-            src={IMAGES.aboutUs}
-            alt=""
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
+          <Image src={IMAGES.aboutUs} alt="" fill className="object-cover" priority sizes="100vw" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/80 to-black" />
         </div>
         <div className="relative z-10 max-w-2xl">
@@ -90,8 +81,8 @@ export default function InsightsPage() {
           </p>
           <h1 className="mt-3 text-3xl font-bold md:text-5xl">Industry Insight</h1>
           <p className="mt-4 text-text-secondary">
-            Stay informed with in-depth resources on imaging equipment, best practices,
-            and industry trends—built from decades of hands-on experience.
+            Stay informed with in-depth resources on imaging equipment, best practices, and industry
+            trends—built from decades of hands-on experience.
           </p>
         </div>
       </section>
@@ -120,18 +111,16 @@ export default function InsightsPage() {
                     {post.category}
                   </span>
                   <span className="text-text-muted">{post.date}</span>
-                {post.soon ? (
-                  <span className="ml-auto rounded bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-text-muted">
-                    Coming Soon
-                  </span>
-                ) : null}
+                  {post.soon ? (
+                    <span className="ml-auto rounded bg-white/5 px-2 py-0.5 text-[11px] font-semibold text-text-muted">
+                      Coming Soon
+                    </span>
+                  ) : null}
                 </div>
                 <h2 className="text-lg font-semibold leading-snug">{post.title}</h2>
                 <p className="mt-3 flex-1 text-sm text-text-muted">{post.excerpt}</p>
                 {post.soon ? (
-                  <span className="mt-4 text-sm font-semibold text-text-muted">
-                    Coming Soon
-                  </span>
+                  <span className="mt-4 text-sm font-semibold text-text-muted">Coming Soon</span>
                 ) : post.href ? (
                   <Link
                     href={post.href}

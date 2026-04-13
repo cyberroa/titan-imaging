@@ -4,12 +4,10 @@ import { ContactForm } from "@/components/forms/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact Us",
-  description:
-    "Reach Titan Imaging Service for PET/CT parts, service, scheduling, and support.",
+  description: "Reach Titan Imaging Service for PET/CT parts, service, scheduling, and support.",
   openGraph: {
     title: "Contact Us | TITAN IMAGING",
-    description:
-      "Reach Titan Imaging Service for PET/CT parts, service, scheduling, and support.",
+    description: "Reach Titan Imaging Service for PET/CT parts, service, scheduling, and support.",
     url: "/contact",
   },
   alternates: {
@@ -26,8 +24,8 @@ export default function ContactPage() {
         </p>
         <h1 className="mt-3 text-3xl font-bold md:text-4xl">We&apos;re Here to Help</h1>
         <p className="mx-auto mt-4 max-w-lg text-text-secondary">
-          Have a question about our PET/CT services, inventory, or need a quote? Reach
-          out—we typically respond within 24 hours.
+          Have a question about our PET/CT services, inventory, or need a quote? Reach out—we
+          typically respond within 24 hours.
         </p>
         <div className="mx-auto mt-8 flex flex-wrap justify-center gap-8 text-sm font-semibold">
           <a

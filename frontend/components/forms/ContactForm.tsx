@@ -13,7 +13,10 @@ export function ContactForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
-        <label htmlFor="contact-name" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="contact-name"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Name
         </label>
         <input
@@ -26,7 +29,10 @@ export function ContactForm() {
         />
       </div>
       <div>
-        <label htmlFor="contact-email" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="contact-email"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Email
         </label>
         <input
@@ -39,7 +45,10 @@ export function ContactForm() {
         />
       </div>
       <div>
-        <label htmlFor="contact-phone" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="contact-phone"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Phone <span className="font-normal text-text-muted">(optional)</span>
         </label>
         <input
@@ -51,7 +60,10 @@ export function ContactForm() {
         />
       </div>
       <div>
-        <label htmlFor="contact-subject" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="contact-subject"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Subject
         </label>
         <input
@@ -63,7 +75,10 @@ export function ContactForm() {
         />
       </div>
       <div>
-        <label htmlFor="contact-message" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="contact-message"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Message
         </label>
         <textarea
@@ -82,8 +97,8 @@ export function ContactForm() {
       </button>
       {showNotice ? (
         <p className="rounded-lg border border-accent-titanium/20 bg-accent-titanium/10 px-4 py-3 text-center text-sm text-accent-titanium">
-          Thanks for reaching out. Online submissions will be delivered to our team in
-          Phase 2. For immediate help, call{" "}
+          Thanks for reaching out. Online submissions will be delivered to our team in Phase 2. For
+          immediate help, call{" "}
           <a href="tel:9047426265" className="font-semibold underline">
             (904) 742-6265
           </a>

@@ -40,8 +40,7 @@ export function Header() {
           } w-full basis-full flex-col gap-1 md:flex md:w-auto md:basis-auto md:flex-row md:items-center md:gap-6`}
         >
           {NAV_LINKS.map(({ href, label }) => {
-            const active =
-              pathname === href || pathname.startsWith(`${href}/`);
+            const active = pathname === href || pathname.startsWith(`${href}/`);
             return (
               <Link
                 key={href}

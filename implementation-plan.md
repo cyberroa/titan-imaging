@@ -57,7 +57,7 @@ titan-imaging/
 ### 1.1 Project Setup
 - [x] Create Next.js 15 project with App Router, TypeScript, Tailwind CSS
 - [x] Configure `next.config` for Vercel (no `output: 'export'`)
-- [x] ESLint (Next.js defaults). **Prettier:** not configured yet — optional polish
+- [x] ESLint (Next.js defaults) + **Prettier** (`npm run format` / `format:check`; `eslint-config-prettier` avoids rule clashes)
 - [x] Logo and banners under `frontend/public/images/`
 
 ### 1.2 Design System

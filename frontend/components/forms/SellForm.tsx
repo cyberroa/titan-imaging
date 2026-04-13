@@ -26,7 +26,10 @@ export function SellForm() {
         />
       </div>
       <div>
-        <label htmlFor="sell-email" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="sell-email"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Email
         </label>
         <input
@@ -39,7 +42,10 @@ export function SellForm() {
         />
       </div>
       <div>
-        <label htmlFor="sell-company" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="sell-company"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Company <span className="font-normal text-text-muted">(optional)</span>
         </label>
         <input
@@ -51,7 +57,10 @@ export function SellForm() {
         />
       </div>
       <div>
-        <label htmlFor="sell-phone" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="sell-phone"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Phone <span className="font-normal text-text-muted">(optional)</span>
         </label>
         <input
@@ -63,7 +72,10 @@ export function SellForm() {
         />
       </div>
       <div>
-        <label htmlFor="sell-equipment" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="sell-equipment"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Equipment details
         </label>
         <textarea
@@ -75,7 +87,10 @@ export function SellForm() {
         />
       </div>
       <div>
-        <label htmlFor="sell-message" className="mb-2 block text-xs font-semibold text-text-secondary">
+        <label
+          htmlFor="sell-message"
+          className="mb-2 block text-xs font-semibold text-text-secondary"
+        >
           Message <span className="font-normal text-text-muted">(optional)</span>
         </label>
         <textarea
@@ -94,8 +109,8 @@ export function SellForm() {
       </button>
       {showNotice ? (
         <p className="rounded-lg border border-accent-titanium/20 bg-accent-titanium/10 px-4 py-3 text-center text-sm text-accent-titanium">
-          Thanks — your quote request will be processed when the backend is connected in
-          Phase 2. Call{" "}
+          Thanks — your quote request will be processed when the backend is connected in Phase 2.
+          Call{" "}
           <a href="tel:9047426265" className="font-semibold underline">
             (904) 742-6265
           </a>{" "}

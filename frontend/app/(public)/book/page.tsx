@@ -42,8 +42,8 @@ export default function BookPage() {
         </p>
         <h1 className="mt-3 text-3xl font-bold md:text-4xl">Book an Appointment</h1>
         <p className="mx-auto mt-4 max-w-xl text-text-secondary">
-          Choose a time that works for you. Calendly will be swapped for Cal.com in a
-          later phase if you choose to migrate.
+          Choose a time that works for you. Calendly will be swapped for Cal.com in a later phase if
+          you choose to migrate.
         </p>
       </div>
 

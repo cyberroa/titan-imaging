@@ -29,8 +29,8 @@ export default function ServicesPage() {
           CT &amp; PET Solutions That Keep You Running
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-text-secondary">
-          Comprehensive services designed to maximize uptime, optimize performance, and
-          support your imaging operations from installation to ongoing maintenance.
+          Comprehensive services designed to maximize uptime, optimize performance, and support your
+          imaging operations from installation to ongoing maintenance.
         </p>
       </section>
 
@@ -61,8 +61,7 @@ export default function ServicesPage() {
       <section className="mx-auto max-w-2xl px-6 pb-24 text-center">
         <h2 className="text-2xl font-bold">Ready to Get Started?</h2>
         <p className="mt-3 text-text-muted">
-          Whether you need a system audit, installation support, or a quote—we&apos;re
-          here to help.
+          Whether you need a system audit, installation support, or a quote—we&apos;re here to help.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-4">
           <Link

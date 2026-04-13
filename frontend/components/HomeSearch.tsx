@@ -13,9 +13,7 @@ export function HomeSearch() {
       onSubmit={(e) => {
         e.preventDefault();
         const query = q.trim();
-        router.push(
-          query ? `/inventory?q=${encodeURIComponent(query)}` : "/inventory",
-        );
+        router.push(query ? `/inventory?q=${encodeURIComponent(query)}` : "/inventory");
       }}
     >
       <input

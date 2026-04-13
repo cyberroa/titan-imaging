@@ -29,8 +29,7 @@ const PLACEHOLDER = [
     org: "Regional Imaging Center",
   },
   {
-    quote:
-      "Placeholder — From parts sourcing to on-site support, the team delivers every time.",
+    quote: "Placeholder — From parts sourcing to on-site support, the team delivers every time.",
     author: "Operations Manager",
     org: "Multi-Site Imaging Group",
   },
@@ -45,8 +44,8 @@ export default function TestimonialsPage() {
         </p>
         <h1 className="mt-3 text-3xl font-bold md:text-4xl">Testimonials</h1>
         <p className="mx-auto mt-4 max-w-2xl text-text-secondary">
-          Real quotes from customers will replace these placeholders when you&apos;re
-          ready to publish them.
+          Real quotes from customers will replace these placeholders when you&apos;re ready to
+          publish them.
         </p>
       </div>
       <div className="mt-14 grid gap-8 md:grid-cols-3">

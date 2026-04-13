@@ -8,23 +8,12 @@ import { MOCK_PARTS, type PartRow } from "@/lib/inventory-mock";
 
 type Filter = "all" | "in-stock" | "CT" | "PET" | "General";
 
-function filterParts(
-  parts: PartRow[],
-  search: string,
-  filter: Filter,
-): PartRow[] {
+function filterParts(parts: PartRow[], search: string, filter: Filter): PartRow[] {
   const q = search.trim().toLowerCase();
   return parts.filter((p) => {
-    const matchSearch =
-      !q ||
-      p.id.toLowerCase().includes(q) ||
-      p.name.toLowerCase().includes(q);
+    const matchSearch = !q || p.id.toLowerCase().includes(q) || p.name.toLowerCase().includes(q);
     const matchFilter =
-      filter === "all"
-        ? true
-        : filter === "in-stock"
-          ? p.stock > 0
-          : p.category === filter;
+      filter === "all" ? true : filter === "in-stock" ? p.stock > 0 : p.category === filter;
     return matchSearch && matchFilter;
   });
 }
@@ -37,10 +26,7 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
     setSearch(initialSearch);
   }, [initialSearch]);
 
-  const filtered = useMemo(
-    () => filterParts(MOCK_PARTS, search, filter),
-    [search, filter],
-  );
+  const filtered = useMemo(() => filterParts(MOCK_PARTS, search, filter), [search, filter]);
 
   const pills: { key: Filter; label: string }[] = [
     { key: "all", label: "All" },
@@ -144,9 +130,7 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
                   key={p.id}
                   className="rounded-xl border border-white/10 bg-[#0d0d0d] p-6 transition hover:border-white/20"
                 >
-                  <p className="font-display text-xs tracking-wider text-accent-titanium">
-                    {p.id}
-                  </p>
+                  <p className="font-display text-xs tracking-wider text-accent-titanium">{p.id}</p>
                   <p className="mt-2 text-base font-semibold leading-snug">{p.name}</p>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-text-muted">

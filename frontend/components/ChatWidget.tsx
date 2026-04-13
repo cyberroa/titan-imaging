@@ -5,9 +5,9 @@ import { useState, useRef, useEffect } from "react";
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>(
-    [{ role: "bot", text: "Hi! What can I help you with today?" }],
-  );
+  const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([
+    { role: "bot", text: "Hi! What can I help you with today?" },
+  ]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -16,10 +16,8 @@ export function ChatWidget() {
 
   function replyFor(text: string) {
     const t = text.toLowerCase();
-    if (t.includes("hours"))
-      return "Our office hours are 9am–5pm EST.";
-    if (t.includes("contact"))
-      return "You can reach us at (904) 742-6265 or info@test.com.";
+    if (t.includes("hours")) return "Our office hours are 9am–5pm EST.";
+    if (t.includes("contact")) return "You can reach us at (904) 742-6265 or info@test.com.";
     return "I'm not sure about that. Please contact support for more info.";
   }
 
@@ -67,8 +65,7 @@ export function ChatWidget() {
                   </>
                 ) : (
                   <>
-                    <strong className="text-accent-titanium">Assistant:</strong>{" "}
-                    {msg.text}
+                    <strong className="text-accent-titanium">Assistant:</strong> {msg.text}
                   </>
                 )}
               </p>
