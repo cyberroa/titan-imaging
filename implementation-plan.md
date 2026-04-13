@@ -4,7 +4,7 @@
 > **Branch workflow:** Use feature branches for new work; merge to `main` (production on Vercel).  
 > **Stack:** Vercel (frontend) · Supabase (DB + Auth + Storage) · Render (FastAPI backend) · **Calendly** (bookings today) · **Cal.com** (optional later; see Phase 3)
 
-**Status:** **Phase 1 complete** — Next.js public site deployed to Vercel. Phase 2+ not started.
+**Status:** **Phase 1 complete** — Next.js public site on Vercel. **Phase 2 complete** — FastAPI on Render, Postgres (Supabase), public API, inventory + forms wired; `NEXT_PUBLIC_API_URL` on Vercel. **Phase 3 not started** — admin auth, CRM, bookings, Cal.com.
 
 ---
 ## Table of Contents
@@ -35,19 +35,21 @@ titan-imaging/
 │   ├── app/
 │   │   ├── (public)/             # Home, About, Services, Contact, Sell, Book, Inventory, Insights, Testimonials
 │   │   └── layout.tsx
-│   ├── components/              # Header, Footer, CalendlyEmbed, InventoryBrowser, seo/, …
+│   ├── components/              # Header, Footer, CalendlyEmbed, InventoryBrowser, HomeSearch, seo/, …
 │   ├── lib/
 │   │   ├── site.ts             # Site URL / canonical helpers
 │   │   ├── images.ts           # Central image paths
 │   │   ├── calendly.ts         # Calendly embed URL + iframe src helper
 │   │   ├── nav.ts              # Nav links
-│   │   ├── inventory-mock.ts   # Temporary inventory data (Phase 2: replace with API)
+│   │   ├── api.ts              # API client; base URL from NEXT_PUBLIC_API_URL
+│   │   ├── inventory-mock.ts   # Legacy mock (optional); inventory page uses API
 │   │   └── services-data.ts
 │   ├── public/images/          # Static assets (logo, banners, etc.)
 │   └── package.json
+├── backend/                     # FastAPI — Render (rootDir backend); Alembic, app/, scripts/
+├── render.yaml                  # Render Blueprint (Web Service + env placeholders)
 ├── legacy/static-site/         # Previous static HTML (reference)
-├── implementation-plan.md
-└── backend/                    # Phase 2 — not created yet (FastAPI)
+└── implementation-plan.md
 ```
 ---
 ## Phase 1: Foundation & Frontend — **complete**
@@ -73,14 +75,14 @@ titan-imaging/
 ### 1.4 Public Pages
 | Page | Route | Notes |
 |------|-------|--------|
-| Home | `/` | Hero, tagline, search UI (still client/mock until Phase 2 API) |
+| Home | `/` | Hero, tagline; search navigates to `/inventory` with `?q=` (API-backed inventory) |
 | About | `/about` | Company content |
 | Services | `/services` | Services content |
 | Contact | `/contact` | Contact content + Calendly embed |
 | Sell | `/sell` | Sell flow content |
 | Testimonials | `/testimonials` | Testimonials |
 | Book | `/book` | Hero + fade + **Calendly** iframe embed |
-| Inventory | `/inventory` | Inventory browser (mock data → API in Phase 2) |
+| Inventory | `/inventory` | Inventory browser via `GET /api/v1/parts` (see `InventoryBrowser`) |
 | Industry Insight | `/insights` | Insights content |
 | System | `/robots.txt`, `/sitemap.xml` | SEO helpers |
 
@@ -96,24 +98,22 @@ titan-imaging/
 - [x] Public routes above + SEO metadata / JSON-LD baseline
 - [x] **Deployed to Vercel** (Git integration on `main`; root directory `frontend`)
 ---
-## Phase 2: Backend & Core Features
+## Phase 2: Backend & Core Features — **complete** (shipped)
 **Goal:** FastAPI backend, Supabase database, working parts search and contact form.
 **Duration:** 2–3 weeks
 ### 2.1 Backend Setup
-- [ ] Create FastAPI project in `backend/`
-- [ ] Add `requirements.txt`: fastapi, uvicorn, sqlalchemy, alembic, psycopg2-binary, pydantic, python-jose[cryptography], passlib[bcrypt], supabase, python-dotenv
-- [ ] Configure CORS for Vercel frontend origin
-- [ ] Add health check endpoint: `GET /health`
-- [ ] Set up environment variables: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_JWT_SECRET`
+- [x] Create FastAPI project in `backend/`
+- [x] Add `requirements.txt` (FastAPI, Uvicorn, SQLAlchemy, Alembic, `psycopg2-binary`, Pydantic, `email-validator`, `python-dotenv`, `httpx`). *JWT/admin auth deps (e.g. PyJWT) deferred to Phase 3.*
+- [x] Configure CORS via `CORS_ORIGINS` (comma-separated origins; see Render env)
+- [x] Health check: `GET /health`
+- [x] Environment variables: **`DATABASE_URL`** (Postgres connection string to Supabase); optional **Resend** keys; **`SUPABASE_JWT_SECRET`** reserved for Phase 3 admin JWT validation (not required for public Phase 2 routes)
 ### 2.2 Database (Supabase)
-- [ ] Create Supabase project; note connection string and JWT secret
-- [ ] Initialize Alembic for migrations
-- [ ] Implement schema (see [Database Schema](#database-schema)):
-  - `categories`, `parts`, `part_images`
-  - `services`, `customers`, `contact_submissions`
-  - `admin_users` (or use Supabase Auth users)
-- [ ] Add `tsvector` column + GIN index on `parts` for full-text search
-- [ ] Create seed script: sample categories and parts
+- [x] Supabase project with Postgres; connection string used by SQLAlchemy (`DATABASE_URL`)
+- [x] Alembic initialized; migration `backend/alembic/versions/20260413_0001_init.py`
+- [x] **Shipped tables:** `categories`, `parts`, `contact_submissions`, `sell_submissions`
+- [ ] **Deferred to Phase 3 / later:** `part_images`, `services`, `customers`, `sales` / `sale_items`, `bookings` (see [Database Schema](#database-schema))
+- [x] `parts.search_vector` (`tsvector`) + GIN index in migration (search behavior in API may use ILIKE and/or vector later)
+- [x] Seed script: `python -m app.scripts.seed` (also invoked from `backend/scripts/render_start.sh` on Render)
 ### 2.3 API Endpoints
 | Endpoint | Method | Auth | Description |
 |----------|--------|------|-------------|
@@ -123,26 +123,26 @@ titan-imaging/
 | `POST /api/v1/contact` | POST | No | Submit contact form |
 | `POST /api/v1/sell` | POST | No | Submit Sell To Us form |
 ### 2.4 Contact & Sell Forms (Backend)
-- [ ] `contact_submissions` table: name, email, subject, message, created_at
-- [ ] `sell_submissions` table (or similar): name, email, company, part_details, message, created_at
-- [ ] Validation with Pydantic
-- [ ] Email notification to admin on new contact/sell submissions via **Resend** (API key on Render; verify sending domain). *SendGrid remains an alternative if you standardize on Twilio later.*
+- [x] `contact_submissions` table: name, email, subject, message, created_at
+- [x] `sell_submissions` table: name, email, company, part_details, message, created_at
+- [x] Validation with Pydantic
+- [ ] **Resend** email to admin on new submissions — *optional; code path exists; enable when sending domain is verified in Resend*
 ### 2.5 Frontend Integration
-- [ ] Create API client in `frontend/lib/api.ts` (base URL from env)
-- [ ] Connect Home page search to `GET /api/v1/parts?search=...`
-- [ ] Display results: part name, stock status (In Stock / Low Stock / Out of Stock)
-- [ ] Connect Contact form to `POST /api/v1/contact`
-- [ ] Connect Sell To Us form to `POST /api/v1/sell`
-- [ ] Add loading states, error handling, success messages
+- [x] API client in `frontend/lib/api.ts` (`NEXT_PUBLIC_API_URL`; defaults to `http://localhost:8000` in dev)
+- [x] Home search navigates to `/inventory?q=…`; inventory loads parts via API
+- [x] Inventory: part name, stock / status display
+- [x] Contact form → `POST /api/v1/contact`
+- [x] Sell To Us form → `POST /api/v1/sell`
+- [x] Loading, error, and success UX on inventory and forms
 ### 2.6 Deploy Backend
-- [ ] Deploy FastAPI to Render (connect repo, set env vars)
-- [ ] Update frontend `NEXT_PUBLIC_API_URL` to Render URL
+- [x] FastAPI on Render (Blueprint `render.yaml`, `rootDir: backend`; free tier uses `scripts/render_start.sh` instead of `preDeployCommand`)
+- [x] Vercel: `NEXT_PUBLIC_API_URL` set to Render service URL
 ### 2.7 Deliverables
-- FastAPI running on Render
-- Supabase database with schema and seed data
-- Parts search working end-to-end
-- Contact and Sell To Us forms functional
-- API docs at `https://your-api.onrender.com/docs`
+- [x] FastAPI running on Render
+- [x] Supabase Postgres with Phase 2 schema + seed data
+- [x] Parts search end-to-end (Vercel → Render API → DB)
+- [x] Contact and Sell To Us forms persist to DB
+- [x] OpenAPI / docs: `https://<your-service>.onrender.com/docs`
 ---
 ## Phase 3: Admin & Advanced
 **Goal:** Admin panel with auth, inventory management, sales, customers, bookings, calendar.
@@ -196,6 +196,8 @@ titan-imaging/
 - Production-ready site
 ---
 ## Database Schema
+**Phase 2 (implemented in migrations):** `categories`, `parts`, `contact_submissions`, `sell_submissions`.  
+**Phase 3+ (planned):** remaining tables below.
 ### Core Tables
 | Table | Key Fields |
 |-------|------------|
@@ -225,21 +227,24 @@ User
 ```
 ### Environment Variables
 **Frontend (Vercel):**
-- *(optional today)* `NEXT_PUBLIC_SITE_URL` — canonical site URL when using a custom domain (falls back to `VERCEL_URL` in code)
-- *(Phase 2+)* `NEXT_PUBLIC_API_URL` — Render API URL
+- *(optional)* `NEXT_PUBLIC_SITE_URL` — canonical site URL when using a custom domain (falls back to `VERCEL_URL` in code)
+- *(Phase 2 — set in production)* **`NEXT_PUBLIC_API_URL`** — Render API base URL (no trailing slash)
 - *(Phase 3+)* `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
 - *(Phase 3+)* `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key (public)
-**Backend (Render):**
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_KEY` — Service role for DB access
-- `SUPABASE_JWT_SECRET` — For JWT validation
-- `CALCOM_WEBHOOK_SECRET` — For webhook verification
+**Backend (Render) — Phase 2 as shipped:**
+- **`DATABASE_URL`** — Postgres connection string (Supabase)
+- **`CORS_ORIGINS`** — Allowed browser origins for the Next.js site
+- *(optional)* **`RESEND_API_KEY`**, **`ADMIN_NOTIFY_EMAIL`**, **`EMAIL_FROM`** — outbound email
+- **`APP_ENV`** — e.g. `production`
+**Backend — Phase 3+ (admin / webhooks):**
+- `SUPABASE_JWT_SECRET` (or JWKS) — validate Supabase-issued JWTs for `/admin` API routes
+- `CALCOM_WEBHOOK_SECRET` — verify Cal.com webhooks
 ---
 ## Pre-Implementation Checklist
 - [x] Repo / branches — work merged to `main`
 - [x] Vercel project linked to GitHub; **Root Directory = `frontend`**; production deploys from `main`
-- [ ] Supabase project created; connection string and JWT secret noted *(Phase 2)*
-- [ ] Render account created *(Phase 2)*
+- [x] Supabase project created; **`DATABASE_URL`** used by Render; JWT secret noted when starting Phase 3 admin auth
+- [x] Render account; FastAPI Web Service deployed from repo (`render.yaml` / manual)
 - [ ] Cal.com account *(optional; Phase 3 — Calendly in use for now)*
 - [x] Logo and image assets in `frontend/public/images/`
 ---
@@ -247,6 +252,6 @@ User
 | Phase | Duration | Key Output |
 |-------|----------|------------|
 | **1. Foundation & Frontend** | 1–2 weeks | **Done** — Next.js site, design system, public pages, Vercel |
-| **2. Backend & Core Features** | 2–3 weeks | FastAPI, Supabase, search, contact/sell forms |
-| **3. Admin & Advanced** | 3–4 weeks | Auth, inventory, sales, customers, Cal.com, calendar |
+| **2. Backend & Core Features** | 2–3 weeks | **Done** — FastAPI on Render, Postgres, parts API, contact/sell, Vercel `NEXT_PUBLIC_API_URL` |
+| **3. Admin & Advanced** | 3–4 weeks | Auth, admin CRUD, sales, customers, Cal.com, calendar *(not started)* |
 **Total estimate:** 6–9 weeks for a single developer.
