@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { SellForm } from "@/components/forms/SellForm";
+import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
   title: "Sell to Us",
@@ -24,7 +25,7 @@ export default function SellPage() {
       <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-4 text-center">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/selltous.png"
+            src={IMAGES.sellToUs}
             alt=""
             fill
             className="object-cover"

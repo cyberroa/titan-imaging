@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { HomeSearch } from "@/components/HomeSearch";
+import { IMAGES } from "@/lib/images";
 
 const HOME_DESCRIPTION =
   "Precision CT/PET parts and seamless service for hospitals and imaging centers. Browse inventory, request support, and partner with Titan Imaging Service.";
@@ -29,7 +30,7 @@ export default function HomePage() {
       <section className="relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-5 pb-14 pt-6 text-center md:min-h-[90vh]">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/titanimagebanner.png"
+            src={IMAGES.titanBanner}
             alt=""
             fill
             className="object-cover"
@@ -95,7 +96,7 @@ export default function HomePage() {
         <div className="relative">
           <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-br from-accent-titanium/20 to-transparent opacity-40" />
           <Image
-            src="/scan.png"
+            src={IMAGES.scan}
             alt="CT/PET imaging"
             width={640}
             height={380}

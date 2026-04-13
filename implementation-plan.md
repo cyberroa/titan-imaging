@@ -39,8 +39,7 @@ my-website/
 │   ├── lib/
 │   │   ├── api.ts              # API client for FastAPI
 │   │   └── supabase.ts         # Supabase client (auth)
-│   ├── public/
-│   │   └── logo.png            # TITAN IMAGING logo
+│   ├── public/images/          # Static images (logo, banners, etc.)
 │   └── package.json
 ├── backend/                    # FastAPI
 │   ├── app/
@@ -58,8 +57,7 @@ my-website/
 │   ├── alembic/                # Migrations
 │   ├── requirements.txt
 │   └── main.py
-├── IMPLEMENTATION_PLAN.md
-└── TITAN IMAGING (600 x 290 mm).png
+├── implementation-plan.md
 ```
 ---
 ## Phase 1: Foundation & Frontend
@@ -69,7 +67,7 @@ my-website/
 - [ ] Create Next.js 15 project with App Router, TypeScript, Tailwind CSS
 - [ ] Configure `next.config.js` for Vercel (no `output: 'export'` needed)
 - [ ] Set up ESLint and Prettier
-- [ ] Copy logo to `frontend/public/logo.png` (from `TITAN IMAGING (600 x 290 mm).png`)
+- [ ] Copy logo to `frontend/public/images/logo.png` (from branded source file; optional `logo-full.png`)
 ### 1.2 Design System
 - [ ] Create Tailwind design tokens in `tailwind.config.js` or CSS variables:
   - Background: `#1E1E1E`, `#111111`, `#282828`, `#2A2A2A`
@@ -246,7 +244,7 @@ User
 - [ ] Supabase project created; connection string and JWT secret noted
 - [ ] Render account created
 - [ ] Cal.com account (Phase 3)
-- [ ] Logo file available: `TITAN IMAGING (600 x 290 mm).png`
+- [ ] Logo assets in `frontend/public/images/` (`logo.png`, optional `logo-full.png`)
 ---
 ## Summary Timeline
 | Phase | Duration | Key Output |

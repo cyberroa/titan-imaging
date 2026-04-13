@@ -1,3 +1,4 @@
+import { IMAGES } from "@/lib/images";
 import { getSiteUrl } from "@/lib/site";
 
 const DESCRIPTION =
@@ -13,8 +14,8 @@ export function SiteJsonLd() {
       name: "Titan Imaging Service",
       description: DESCRIPTION,
       url,
-      logo: `${url}/logo.png`,
-      image: `${url}/titanimagebanner.png`,
+      logo: `${url}${IMAGES.logo}`,
+      image: `${url}${IMAGES.titanBanner}`,
       telephone: "+1-904-742-6265",
       email: "info@test.com",
       areaServed: {

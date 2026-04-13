@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { CalendlyEmbed } from "@/components/CalendlyEmbed";
+import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
   title: "Book an Appointment",
@@ -21,7 +22,7 @@ export default function BookPage() {
       <section className="relative min-h-[40vh] overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/servicesimage.png"
+            src={IMAGES.servicesImage}
             alt=""
             fill
             className="object-cover"
