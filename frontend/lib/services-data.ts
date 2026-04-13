@@ -10,8 +10,7 @@ export const SERVICES: ServiceItem[] = [
   {
     id: "1",
     title: "Installation & De-Installation",
-    preview:
-      "Professional coordination and execution of equipment removal and re-installation.",
+    preview: "Professional coordination and execution of equipment removal and re-installation.",
     body: "We handle every aspect of equipment transitions—from careful de-installation to precise re-installation—ensuring minimal downtime and seamless system integration.",
     bullets: [
       "Site assessment and planning",
@@ -23,8 +22,7 @@ export const SERVICES: ServiceItem[] = [
   {
     id: "2",
     title: "Transportation & Logistics",
-    preview:
-      "Secure, reliable transportation for imaging systems and components.",
+    preview: "Secure, reliable transportation for imaging systems and components.",
     body: "Our logistics network ensures your equipment arrives safely and on time. We follow industry best practices for handling sensitive medical imaging systems.",
     bullets: [
       "Specialized packaging and crating",
@@ -36,8 +34,7 @@ export const SERVICES: ServiceItem[] = [
   {
     id: "3",
     title: "Technical Training",
-    preview:
-      "On-site and remote training to equip your staff with confidence.",
+    preview: "On-site and remote training to equip your staff with confidence.",
     body: "Customized training programs designed to help your team operate systems efficiently, troubleshoot common issues, and maintain peak performance.",
     bullets: [
       "On-site and remote options",
@@ -49,8 +46,7 @@ export const SERVICES: ServiceItem[] = [
   {
     id: "4",
     title: "System Sales",
-    preview:
-      "Refurbished and pre-owned CT and PET systems tailored to your needs.",
+    preview: "Refurbished and pre-owned CT and PET systems tailored to your needs.",
     body: "Quality refurbished systems for hospitals, imaging centers, and private practices. Each system is thoroughly tested and backed by our expertise.",
     bullets: [
       "GE PET/CT systems",
@@ -62,8 +58,7 @@ export const SERVICES: ServiceItem[] = [
   {
     id: "5",
     title: "Service Contracts",
-    preview:
-      "Flexible agreements for ongoing maintenance and support.",
+    preview: "Flexible agreements for ongoing maintenance and support.",
     body: "Ongoing maintenance, technical support, and performance optimization tailored to your facility's needs and budget.",
     bullets: [
       "Preventive maintenance schedules",
@@ -75,8 +70,7 @@ export const SERVICES: ServiceItem[] = [
   {
     id: "6",
     title: "Parts & Support",
-    preview:
-      "Rapid access to OEM and refurbished parts with expert support.",
+    preview: "Rapid access to OEM and refurbished parts with expert support.",
     body: "Keep your equipment operating at peak performance with fast access to quality parts and expert technical support when you need it.",
     bullets: [
       "OEM and refurbished parts",

@@ -1,6 +1,11 @@
 # Titan Imaging Website — Implementation Plan
-> **Branch:** Create and work from a new feature branch for all implementation.  
-> **Stack:** Vercel (frontend) · Supabase (DB + Auth + Storage) · Render (FastAPI backend) · Cal.com (bookings)
+
+> **Repo:** `cyberroa/titan-imaging` (GitHub). **Vercel:** set **Root Directory** to `frontend` for deploys.  
+> **Branch workflow:** Use feature branches for new work; merge to `main` (production on Vercel).  
+> **Stack:** Vercel (frontend) · Supabase (DB + Auth + Storage) · Render (FastAPI backend) · **Calendly** (bookings today) · **Cal.com** (optional later; see Phase 3)
+
+**Status:** **Phase 1 complete** — Next.js public site deployed to Vercel. Phase 2+ not started.
+
 ---
 ## Table of Contents
 1. [Technology Stack](#technology-stack)
@@ -20,85 +25,76 @@
 | **Database** | Supabase (PostgreSQL) | Includes Auth + Storage; migrations via Alembic |
 | **Auth** | Supabase Auth + FastAPI | Supabase issues JWTs; FastAPI validates with PyJWT |
 | **Storage** | Supabase Storage | Part images; optional S3 migration later |
-| **Bookings** | Cal.com | Embed widget; webhooks sync to DB |
+| **Bookings** | Calendly (now) · Cal.com (planned) | Inline iframe on `/book` and Contact; Phase 3: webhooks + DB sync |
 | **Hosting** | Vercel (frontend), Render (API) | No static export needed; full Next.js features |
 ---
-## Project Structure
+## Project Structure (current)
 ```
-my-website/
-├── frontend/                    # Next.js
+titan-imaging/
+├── frontend/                    # Next.js 15 — Vercel root directory
 │   ├── app/
-│   │   ├── (public)/           # Home, About, Services, Contact, Sell To Us, Testimonials
-│   │   ├── admin/              # Protected admin routes
+│   │   ├── (public)/             # Home, About, Services, Contact, Sell, Book, Inventory, Insights, Testimonials
 │   │   └── layout.tsx
-│   ├── components/
-│   │   ├── Header.tsx
-│   │   ├── Footer.tsx
-│   │   ├── SearchBar.tsx
-│   │   └── ...
+│   ├── components/              # Header, Footer, CalendlyEmbed, InventoryBrowser, seo/, …
 │   ├── lib/
-│   │   ├── api.ts              # API client for FastAPI
-│   │   └── supabase.ts         # Supabase client (auth)
-│   ├── public/images/          # Static images (logo, banners, etc.)
+│   │   ├── site.ts             # Site URL / canonical helpers
+│   │   ├── images.ts           # Central image paths
+│   │   ├── calendly.ts         # Calendly embed URL + iframe src helper
+│   │   ├── nav.ts              # Nav links
+│   │   ├── inventory-mock.ts   # Temporary inventory data (Phase 2: replace with API)
+│   │   └── services-data.ts
+│   ├── public/images/          # Static assets (logo, banners, etc.)
 │   └── package.json
-├── backend/                    # FastAPI
-│   ├── app/
-│   │   ├── api/
-│   │   │   ├── v1/
-│   │   │   │   ├── parts.py
-│   │   │   │   ├── categories.py
-│   │   │   │   ├── contact.py
-│   │   │   │   └── ...
-│   │   │   └── deps.py         # Auth dependency (JWT validation)
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── services/
-│   │   └── db/
-│   ├── alembic/                # Migrations
-│   ├── requirements.txt
-│   └── main.py
+├── legacy/static-site/         # Previous static HTML (reference)
 ├── implementation-plan.md
+└── backend/                    # Phase 2 — not created yet (FastAPI)
 ```
 ---
-## Phase 1: Foundation & Frontend
-**Goal:** Next.js app with design system and all public pages. No backend yet.
-**Duration:** 1–2 weeks
+## Phase 1: Foundation & Frontend — **complete**
+**Goal:** Next.js app with design system and all public pages. No backend yet.  
+**Duration:** 1–2 weeks (shipped)
+
 ### 1.1 Project Setup
-- [ ] Create Next.js 15 project with App Router, TypeScript, Tailwind CSS
-- [ ] Configure `next.config.js` for Vercel (no `output: 'export'` needed)
-- [ ] Set up ESLint and Prettier
-- [ ] Copy logo to `frontend/public/images/logo.png` (from branded source file; optional `logo-full.png`)
+- [x] Create Next.js 15 project with App Router, TypeScript, Tailwind CSS
+- [x] Configure `next.config` for Vercel (no `output: 'export'`)
+- [x] ESLint (Next.js defaults) + **Prettier** (`npm run format` / `format:check`; `eslint-config-prettier` avoids rule clashes)
+- [x] Logo and banners under `frontend/public/images/`
+
 ### 1.2 Design System
-- [ ] Create Tailwind design tokens in `tailwind.config.js` or CSS variables:
-  - Background: `#1E1E1E`, `#111111`, `#282828`, `#2A2A2A`
-  - Text: `#FFFFFF`, `#BBBBBB`, `#777777`
-  - Accent: `#00FFD5` or `#B0B0B0` (titanium)
-- [ ] Typography: Orbitron for headings/logo, Inter for body
-- [ ] Add Google Fonts or local font files
+- [x] Tailwind tokens in `tailwind.config.ts` + CSS variables in `globals.css` (dark theme; background `#000000` base, raised/card/muted grays, accent + titanium, text primary/secondary/muted)
+- [x] Typography: **Orbitron** (display / logo), **Inter** (body) via `next/font/google`
+
 ### 1.3 Layout Components
-- [ ] **Header:** Logo (link to home), nav links (Contact Us, Sell To Us, About Us, Services, Testimonials)
-- [ ] **Footer:** Copyright "© 2026 TITAN IMAGING. All Rights Reserved."
-- [ ] **Responsive nav:** Mobile hamburger menu for small screens
-- [ ] Preserve logo styling: white on dark, no layout changes
+- [x] **Header:** Logo → home; nav includes Inventory, Contact, Book, Sell to Us, Services, About, Industry Insight, Testimonials
+- [x] **Footer:** Copyright line (e.g. © 2026 TITAN IMAGING)
+- [x] **Responsive nav:** Mobile menu (`md:hidden` toggle)
+- [x] Logo: white on dark
+
 ### 1.4 Public Pages
-| Page | Route | Content |
-|------|-------|---------|
-| Home | `/` | Hero with "CT/PET Parts & Services", tagline "Precision Parts. Seamless Service. Every Time.", search bar (UI only for now) |
-| About Us | `/about` | Placeholder: company story, mission |
-| Services | `/services` | Placeholder: list of installation/repair services |
-| Contact Us | `/contact` | Contact form UI (Name, Email, Subject, Message, Send Message button) — non-functional |
-| Sell To Us | `/sell` | Placeholder or form UI for selling parts |
-| Testimonials | `/testimonials` | Placeholder: testimonials carousel or list |
+| Page | Route | Notes |
+|------|-------|--------|
+| Home | `/` | Hero, tagline, search UI (still client/mock until Phase 2 API) |
+| About | `/about` | Company content |
+| Services | `/services` | Services content |
+| Contact | `/contact` | Contact content + Calendly embed |
+| Sell | `/sell` | Sell flow content |
+| Testimonials | `/testimonials` | Testimonials |
+| Book | `/book` | Hero + fade + **Calendly** iframe embed |
+| Inventory | `/inventory` | Inventory browser (mock data → API in Phase 2) |
+| Industry Insight | `/insights` | Insights content |
+| System | `/robots.txt`, `/sitemap.xml` | SEO helpers |
+
 ### 1.5 Enhancements (Optional)
-- [ ] Service catalog with pricing placeholders
-- [ ] Testimonials carousel on Home or Testimonials page
-- [ ] Subtle hover effects on nav links and buttons
+- [ ] Service catalog with pricing placeholders (partial — Services page exists)
+- [ ] Testimonials carousel (page exists; carousel optional)
+- [x] Hover / transition polish on nav and controls (baseline in place)
+
 ### 1.6 Deliverables
-- Fully navigable Next.js site
-- Dark theme matching design
-- Logo integrated in header
-- All 6 pages with placeholder content
-- Deployable to Vercel (manual or CI)
+- [x] Fully navigable Next.js site
+- [x] Dark theme + branded assets
+- [x] Logo in header
+- [x] Public routes above + SEO metadata / JSON-LD baseline
+- [x] **Deployed to Vercel** (Git integration on `main`; root directory `frontend`)
 ---
 ## Phase 2: Backend & Core Features
 **Goal:** FastAPI backend, Supabase database, working parts search and contact form.
@@ -170,10 +166,10 @@ my-website/
 - [ ] **Customers:** CRUD in admin; fields: name, email, phone, address, company
 - [ ] **Sales:** Create sale, add line items (parts/services), quantity, unit price; calculate total
 - [ ] **Sales List:** Table with customer, total, status, date
-### 3.5 Bookings (Cal.com)
-- [ ] Create Cal.com account
+### 3.5 Bookings (Cal.com — migrate from Calendly when ready)
+- [ ] Create Cal.com account (optional if staying on Calendly + manual processes)
 - [ ] Configure event types: "Installation Consultation", "Repair Estimate"
-- [ ] Embed Cal.com widget on Services page or `/book`
+- [ ] Replace or supplement Calendly embed on `/book` (and Contact if desired)
 - [ ] Webhook handler in FastAPI: `POST /api/v1/webhooks/calcom` to store bookings in DB
 - [ ] `bookings` table: customer_id, cal_com_booking_id, scheduled_at, type, status
 ### 3.6 Admin Bookings & Calendar
@@ -225,13 +221,14 @@ User
   ├─► Vercel (Next.js) ─► Static + Server Components
   │
   └─► Render (FastAPI) ─► Supabase (PostgreSQL + Auth + Storage)
-                         Cal.com (webhooks)
+                         Cal.com webhooks (Phase 3); Calendly live today
 ```
 ### Environment Variables
 **Frontend (Vercel):**
-- `NEXT_PUBLIC_API_URL` — Render API URL
-- `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key (public)
+- *(optional today)* `NEXT_PUBLIC_SITE_URL` — canonical site URL when using a custom domain (falls back to `VERCEL_URL` in code)
+- *(Phase 2+)* `NEXT_PUBLIC_API_URL` — Render API URL
+- *(Phase 3+)* `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL
+- *(Phase 3+)* `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase anon key (public)
 **Backend (Render):**
 - `SUPABASE_URL`
 - `SUPABASE_SERVICE_KEY` — Service role for DB access
@@ -239,17 +236,17 @@ User
 - `CALCOM_WEBHOOK_SECRET` — For webhook verification
 ---
 ## Pre-Implementation Checklist
-- [ ] Create new branch for implementation
-- [ ] Vercel project linked to repo (Next.js preset)
-- [ ] Supabase project created; connection string and JWT secret noted
-- [ ] Render account created
-- [ ] Cal.com account (Phase 3)
-- [ ] Logo assets in `frontend/public/images/` (`logo.png`, optional `logo-full.png`)
+- [x] Repo / branches — work merged to `main`
+- [x] Vercel project linked to GitHub; **Root Directory = `frontend`**; production deploys from `main`
+- [ ] Supabase project created; connection string and JWT secret noted *(Phase 2)*
+- [ ] Render account created *(Phase 2)*
+- [ ] Cal.com account *(optional; Phase 3 — Calendly in use for now)*
+- [x] Logo and image assets in `frontend/public/images/`
 ---
 ## Summary Timeline
 | Phase | Duration | Key Output |
 |-------|----------|------------|
-| **1. Foundation & Frontend** | 1–2 weeks | Next.js site, design system, all public pages |
+| **1. Foundation & Frontend** | 1–2 weeks | **Done** — Next.js site, design system, public pages, Vercel |
 | **2. Backend & Core Features** | 2–3 weeks | FastAPI, Supabase, search, contact/sell forms |
 | **3. Admin & Advanced** | 3–4 weeks | Auth, inventory, sales, customers, Cal.com, calendar |
 **Total estimate:** 6–9 weeks for a single developer.

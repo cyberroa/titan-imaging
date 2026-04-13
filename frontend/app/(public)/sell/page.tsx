@@ -40,8 +40,8 @@ export default function SellPage() {
           </p>
           <h1 className="mt-3 text-3xl font-bold md:text-5xl">Sell With Confidence</h1>
           <p className="mt-4 text-text-secondary">
-            Turn your PET/CT equipment into a fair offer. We buy systems, parts, and
-            components—and make the process simple.
+            Turn your PET/CT equipment into a fair offer. We buy systems, parts, and components—and
+            make the process simple.
           </p>
         </div>
       </section>
@@ -64,14 +64,20 @@ export default function SellPage() {
             How It Works
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-text-secondary">
-            Selling your equipment to Titan Imaging is simple and secure. Submit your
-            details, receive a fair quote, and we guide you through every step for a
-            smooth, transparent experience.
+            Selling your equipment to Titan Imaging is simple and secure. Submit your details,
+            receive a fair quote, and we guide you through every step for a smooth, transparent
+            experience.
           </p>
           <ol className="mt-8 space-y-6 border-t border-white/10 pt-8">
             {[
-              ["Submit", "Send equipment details via the form. Include model, condition, and quantity."],
-              ["Get a Quote", "Our team reviews your submission and provides a fair offer within 24 hours."],
+              [
+                "Submit",
+                "Send equipment details via the form. Include model, condition, and quantity.",
+              ],
+              [
+                "Get a Quote",
+                "Our team reviews your submission and provides a fair offer within 24 hours.",
+              ],
               ["Complete", "We handle logistics and payment so you can sell with confidence."],
             ].map(([title, text], i) => (
               <li key={title} className="flex gap-4">
@@ -94,9 +100,7 @@ export default function SellPage() {
                 <span className="text-lg text-accent-titanium" aria-hidden>
                   ◇
                 </span>
-                <span className="mt-2 text-xs font-semibold text-text-secondary">
-                  {label}
-                </span>
+                <span className="mt-2 text-xs font-semibold text-text-secondary">{label}</span>
               </div>
             ))}
           </div>
@@ -108,8 +112,8 @@ export default function SellPage() {
             .
           </p>
           <p className="mt-6 border-t border-white/10 pt-6 text-xs leading-relaxed text-text-muted">
-            <strong className="text-text-secondary">Security note:</strong> verify
-            communications by calling{" "}
+            <strong className="text-text-secondary">Security note:</strong> verify communications by
+            calling{" "}
             <a href="tel:9047426265" className="text-accent-titanium underline">
               (904) 742-6265
             </a>{" "}

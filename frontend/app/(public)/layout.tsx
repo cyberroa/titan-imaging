@@ -2,11 +2,7 @@ import { ChatWidget } from "@/components/ChatWidget";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 
-export default function PublicLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header />

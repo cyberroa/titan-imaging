@@ -47,8 +47,8 @@ export default function HomePage() {
             Precision Parts. Seamless Service. Every Time.
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-text-secondary md:text-xl">
-            Trusted sourcing, repair, and support for medical imaging systems. Over
-            30 years of hands-on expertise.
+            Trusted sourcing, repair, and support for medical imaging systems. Over 30 years of
+            hands-on expertise.
           </p>
           <HomeSearch />
           <div className="mt-10 flex flex-wrap justify-center gap-4">
@@ -77,14 +77,12 @@ export default function HomePage() {
             Trusted by Hospitals &amp; Imaging Centers
           </h2>
           <p className="mt-4 text-text-secondary">
-            Titan Imaging Service provides high-quality CT and PET parts, system
-            solutions, and service support to imaging centers and hospitals
-            nationwide.
+            Titan Imaging Service provides high-quality CT and PET parts, system solutions, and
+            service support to imaging centers and hospitals nationwide.
           </p>
           <p className="mt-4 text-text-secondary">
-            With over 30 years of hands-on experience in GE PET/CT systems, our
-            team ensures reliable installations, precise maintenance, and fast
-            technical support.
+            With over 30 years of hands-on experience in GE PET/CT systems, our team ensures
+            reliable installations, precise maintenance, and fast technical support.
           </p>
           <Link
             href="/about"
@@ -109,8 +107,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl text-center">
           <h2 className="text-3xl font-bold md:text-4xl">Our Core Services</h2>
           <p className="mx-auto mt-3 max-w-lg text-text-muted">
-            End-to-end solutions for medical imaging—from parts to full system
-            support
+            End-to-end solutions for medical imaging—from parts to full system support
           </p>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {[
@@ -135,8 +132,8 @@ export default function HomePage() {
         <div className="text-center">
           <h2 className="text-3xl font-bold md:text-4xl">Industry Insight</h2>
           <p className="mx-auto mt-3 max-w-2xl text-text-muted">
-            Expert insights on CT scanner installation, PET/CT systems, used
-            medical imaging equipment, and industry best practices.
+            Expert insights on CT scanner installation, PET/CT systems, used medical imaging
+            equipment, and industry best practices.
           </p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-3">
