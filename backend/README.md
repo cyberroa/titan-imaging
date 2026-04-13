@@ -36,7 +36,7 @@ uvicorn app.main:app --reload --port 8000
    - **`DATABASE_URL`** — Supabase Postgres URI. Use the **Session pooler** (or IPv4-friendly) connection string if direct `db.*.supabase.co` fails to resolve from Render; ensure it works with SQLAlchemy (e.g. `postgresql://…` or `postgresql+psycopg2://…`).
    - **`CORS_ORIGINS`** — Comma-separated browser origins allowed to call the API, e.g. `https://your-app.vercel.app,https://www.yourdomain.com` (no trailing slashes). Must include every Vercel preview URL you care about, or use your production domain only.
    - Optional: **`RESEND_API_KEY`**, **`ADMIN_NOTIFY_EMAIL`**, **`EMAIL_FROM`** for contact/sell notifications.
-4. Deploys run **`alembic upgrade head`** then **`python -m app.scripts.seed`** before the new release starts (see `render.yaml` `preDeployCommand`).
+4. On the **free** Render plan, **`preDeployCommand` is not available**, so **`scripts/render_start.sh`** runs migrations and seed, then **uvicorn**, on each container start (seed is safe to repeat). Paid plans can use a separate pre-deploy step in the dashboard if you prefer.
 5. Smoke-test: `GET https://<your-service>.onrender.com/health` should return `{"ok":true}`.
 
 **Vercel (frontend):** set **`NEXT_PUBLIC_API_URL`** to your Render service URL (e.g. `https://titan-imaging-api.onrender.com`) so the Next.js app calls the live API.
