@@ -1,44 +1,36 @@
 "use client";
 
-import { CALENDLY_EMBED_URL } from "@/lib/calendly";
-import Script from "next/script";
-import { useCallback, useRef } from "react";
+import { getCalendlyInlineIframeSrc } from "@/lib/calendly";
+import { useEffect, useState } from "react";
 
-declare global {
-  interface Window {
-    Calendly?: {
-      initInlineWidget: (opts: {
-        url: string;
-        parentElement: HTMLElement;
-      }) => void;
-    };
-  }
-}
-
+/**
+ * Iframe embed avoids next/script + initInlineWidget races (common with App Router).
+ * Calendly requires embed_domain to match the page host (incl. localhost:3000).
+ */
 export function CalendlyEmbed() {
-  const parentRef = useRef<HTMLDivElement>(null);
+  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
 
-  const init = useCallback(() => {
-    const el = parentRef.current;
-    if (!el || !window.Calendly) return;
-    el.innerHTML = "";
-    window.Calendly.initInlineWidget({
-      url: CALENDLY_EMBED_URL,
-      parentElement: el,
-    });
+  useEffect(() => {
+    setIframeSrc(getCalendlyInlineIframeSrc(window.location.host));
   }, []);
 
   return (
-    <>
-      <Script
-        src="https://assets.calendly.com/assets/external/widget.js"
-        strategy="lazyOnload"
-        onLoad={init}
-      />
-      <div
-        ref={parentRef}
-        className="calendly-inline-widget min-h-[700px] w-full min-w-[320px] overflow-hidden rounded-lg"
-      />
-    </>
+    <div className="min-h-[700px] w-full min-w-[320px] overflow-hidden rounded-lg">
+      {iframeSrc ? (
+        <iframe
+          title="Schedule an appointment with Titan Imaging"
+          src={iframeSrc}
+          className="h-[700px] w-full min-w-[320px] rounded-lg border-0"
+          loading="lazy"
+        />
+      ) : (
+        <div
+          className="flex min-h-[700px] w-full items-center justify-center rounded-lg bg-background text-sm text-text-secondary"
+          role="status"
+        >
+          Loading calendar…
+        </div>
+      )}
+    </div>
   );
 }
