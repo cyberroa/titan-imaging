@@ -90,12 +90,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} ${orbitron.variable}`}>
-      <head>
-        <link
-          rel="stylesheet"
-          href="https://assets.calendly.com/assets/external/widget.css"
-        />
-      </head>
       <body className="min-h-screen bg-background font-sans antialiased text-white">
         <SiteJsonLd />
         {children}
