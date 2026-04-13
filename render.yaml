@@ -1,0 +1,28 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# After connecting the repo, set secret env vars in the dashboard (DATABASE_URL, CORS_ORIGINS, …).
+
+services:
+  - type: web
+    name: titan-imaging-api
+    runtime: python
+    region: oregon
+    plan: free
+    branch: prod
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: alembic upgrade head && python -m app.scripts.seed
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ADMIN_NOTIFY_EMAIL
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
