@@ -10,8 +10,8 @@ services:
     branch: main
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    preDeployCommand: alembic upgrade head && python -m app.scripts.seed
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Free tier does not support preDeployCommand; migrate + seed run at container start instead.
+    startCommand: bash scripts/render_start.sh
     healthCheckPath: /health
     envVars:
       - key: APP_ENV
