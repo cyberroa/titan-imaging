@@ -3,15 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { apiFetch, type ApiCategory, type ApiPart } from "@/lib/api";
 import { IMAGES } from "@/lib/images";
-import { MOCK_PARTS, type PartRow } from "@/lib/inventory-mock";
 
 type Filter = "all" | "in-stock" | "CT" | "PET" | "General";
 
-function filterParts(parts: PartRow[], search: string, filter: Filter): PartRow[] {
+type UiPartRow = {
+  id: string;
+  partNumber: string;
+  name: string;
+  category: "CT" | "PET" | "General";
+  stock: number;
+};
+
+function filterParts(parts: UiPartRow[], search: string, filter: Filter): UiPartRow[] {
   const q = search.trim().toLowerCase();
   return parts.filter((p) => {
-    const matchSearch = !q || p.id.toLowerCase().includes(q) || p.name.toLowerCase().includes(q);
+    const matchSearch =
+      !q ||
+      p.partNumber.toLowerCase().includes(q) ||
+      p.name.toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q);
     const matchFilter =
       filter === "all" ? true : filter === "in-stock" ? p.stock > 0 : p.category === filter;
     return matchSearch && matchFilter;
@@ -21,12 +33,56 @@ function filterParts(parts: PartRow[], search: string, filter: Filter): PartRow[
 export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: string }) {
   const [search, setSearch] = useState(initialSearch);
   const [filter, setFilter] = useState<Filter>("all");
+  const [parts, setParts] = useState<UiPartRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setSearch(initialSearch);
   }, [initialSearch]);
 
-  const filtered = useMemo(() => filterParts(MOCK_PARTS, search, filter), [search, filter]);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [categories, apiParts] = await Promise.all([
+          apiFetch<ApiCategory[]>("/api/v1/categories"),
+          apiFetch<ApiPart[]>("/api/v1/parts?limit=200"),
+        ]);
+
+        const bySlug = new Map(categories.map((c) => [c.slug, c.name] as const));
+        const mapped: UiPartRow[] = apiParts.map((p) => {
+          const catSlug = p.category ?? "general";
+          const label = bySlug.get(catSlug) ?? catSlug;
+          const normalizedCategory =
+            label.toLowerCase() === "ct" ? "CT" : label.toLowerCase() === "pet" ? "PET" : "General";
+
+          return {
+            id: p.id,
+            partNumber: p.part_number,
+            name: p.name,
+            category: normalizedCategory,
+            stock: p.stock_quantity,
+          };
+        });
+
+        if (!cancelled) setParts(mapped);
+      } catch {
+        if (!cancelled) setError("Unable to load inventory right now. Please try again soon.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filtered = useMemo(() => filterParts(parts, search, filter), [parts, search, filter]);
 
   const pills: { key: Filter; label: string }[] = [
     { key: "all", label: "All" },
@@ -107,11 +163,33 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-text-muted">Available Parts</h2>
           <span className="text-sm text-text-muted">
-            {filtered.length} part{filtered.length !== 1 ? "s" : ""} found
+            {loading
+              ? "Loading…"
+              : `${filtered.length} part${filtered.length !== 1 ? "s" : ""} found`}
           </span>
         </div>
 
-        {filtered.length === 0 ? (
+        {error ? (
+          <div className="rounded-xl border border-white/10 bg-background-card px-6 py-10 text-center">
+            <p className="text-text-muted">{error}</p>
+            <p className="mt-3 text-sm text-text-muted">
+              Or call{" "}
+              <a href="tel:9047426265" className="font-semibold text-accent-titanium underline">
+                (904) 742-6265
+              </a>{" "}
+              for immediate help.
+            </p>
+          </div>
+        ) : loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-[128px] animate-pulse rounded-xl border border-white/10 bg-[#0d0d0d]"
+              />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-white/15 bg-background-card py-16 text-center">
             <p className="text-text-muted">
               No parts match your search.{" "}
@@ -130,7 +208,9 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
                   key={p.id}
                   className="rounded-xl border border-white/10 bg-[#0d0d0d] p-6 transition hover:border-white/20"
                 >
-                  <p className="font-display text-xs tracking-wider text-accent-titanium">{p.id}</p>
+                  <p className="font-display text-xs tracking-wider text-accent-titanium">
+                    {p.partNumber}
+                  </p>
                   <p className="mt-2 text-base font-semibold leading-snug">{p.name}</p>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[11px] font-medium uppercase tracking-wide text-text-muted">

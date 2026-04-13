@@ -1,13 +1,38 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export function SellForm() {
-  const [showNotice, setShowNotice] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setShowNotice(true);
+    if (status === "sending") return;
+
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const equipment = String(fd.get("equipment") ?? "").trim();
+
+    const payload = {
+      name: String(fd.get("name") ?? "").trim(),
+      email: String(fd.get("email") ?? "").trim(),
+      company: String(fd.get("company") ?? "").trim() || undefined,
+      part_details: equipment || "N/A",
+      message: String(fd.get("message") ?? "").trim() || undefined,
+    };
+
+    setStatus("sending");
+    try {
+      await apiFetch<{ ok: boolean }>("/api/v1/sell", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      form.reset();
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
   }
 
   return (
@@ -103,18 +128,26 @@ export function SellForm() {
       </div>
       <button
         type="submit"
-        className="w-full rounded-lg bg-accent-titanium py-4 text-sm font-semibold text-black transition hover:brightness-110"
+        disabled={status === "sending"}
+        className="w-full rounded-lg bg-accent-titanium py-4 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Submit for Quote
+        {status === "sending" ? "Submitting…" : "Submit for Quote"}
       </button>
-      {showNotice ? (
+      {status === "sent" ? (
         <p className="rounded-lg border border-accent-titanium/20 bg-accent-titanium/10 px-4 py-3 text-center text-sm text-accent-titanium">
-          Thanks — your quote request will be processed when the backend is connected in Phase 2.
-          Call{" "}
+          Thanks — we received your request. Call{" "}
           <a href="tel:9047426265" className="font-semibold underline">
             (904) 742-6265
           </a>{" "}
           for immediate assistance.
+        </p>
+      ) : status === "error" ? (
+        <p className="rounded-lg border border-white/10 bg-background-card px-4 py-3 text-center text-sm text-text-secondary">
+          Something went wrong submitting your request. Please try again, or call{" "}
+          <a href="tel:9047426265" className="font-semibold text-accent-titanium underline">
+            (904) 742-6265
+          </a>
+          .
         </p>
       ) : null}
     </form>

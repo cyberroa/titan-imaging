@@ -126,7 +126,7 @@ titan-imaging/
 - [ ] `contact_submissions` table: name, email, subject, message, created_at
 - [ ] `sell_submissions` table (or similar): name, email, company, part_details, message, created_at
 - [ ] Validation with Pydantic
-- [ ] Optional: email notification to admin (Resend, SendGrid, or Supabase Edge Function)
+- [ ] Email notification to admin on new contact/sell submissions via **Resend** (API key on Render; verify sending domain). *SendGrid remains an alternative if you standardize on Twilio later.*
 ### 2.5 Frontend Integration
 - [ ] Create API client in `frontend/lib/api.ts` (base URL from env)
 - [ ] Connect Home page search to `GET /api/v1/parts?search=...`

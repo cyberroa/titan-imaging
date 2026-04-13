@@ -1,13 +1,35 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 export function ContactForm() {
-  const [showNotice, setShowNotice] = useState(false);
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setShowNotice(true);
+    if (status === "sending") return;
+
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const payload = {
+      name: String(fd.get("name") ?? "").trim(),
+      email: String(fd.get("email") ?? "").trim(),
+      subject: String(fd.get("subject") ?? "").trim(),
+      message: String(fd.get("message") ?? "").trim(),
+    };
+
+    setStatus("sending");
+    try {
+      await apiFetch<{ ok: boolean }>("/api/v1/contact", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      form.reset();
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
   }
 
   return (
@@ -91,15 +113,23 @@ export function ContactForm() {
       </div>
       <button
         type="submit"
-        className="w-full rounded-lg bg-accent-titanium py-4 text-sm font-semibold text-black transition hover:brightness-110"
+        disabled={status === "sending"}
+        className="w-full rounded-lg bg-accent-titanium py-4 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        Send Message
+        {status === "sending" ? "Sending…" : "Send Message"}
       </button>
-      {showNotice ? (
+      {status === "sent" ? (
         <p className="rounded-lg border border-accent-titanium/20 bg-accent-titanium/10 px-4 py-3 text-center text-sm text-accent-titanium">
-          Thanks for reaching out. Online submissions will be delivered to our team in Phase 2. For
-          immediate help, call{" "}
+          Thanks for reaching out. Your message has been sent. For immediate help, call{" "}
           <a href="tel:9047426265" className="font-semibold underline">
+            (904) 742-6265
+          </a>
+          .
+        </p>
+      ) : status === "error" ? (
+        <p className="rounded-lg border border-white/10 bg-background-card px-4 py-3 text-center text-sm text-text-secondary">
+          Something went wrong sending your message. Please try again, or call{" "}
+          <a href="tel:9047426265" className="font-semibold text-accent-titanium underline">
             (904) 742-6265
           </a>
           .
