@@ -30,7 +30,7 @@ uvicorn app.main:app --reload --port 8000
 
 ### Deploy on Render
 
-1. Push `prod` (this repo includes `render.yaml` at the root and `backend/runtime.txt` for Python 3.12).
+1. Push `main` (this repo includes `render.yaml` at the root and `backend/runtime.txt` for Python 3.12).
 2. In the [Render Dashboard](https://dashboard.render.com), **New** → **Blueprint**, connect this GitHub repository, and apply the blueprint (or **New** → **Web Service** and point at this repo with **Root Directory** `backend` if you prefer manual setup).
 3. Set environment variables (Dashboard → your web service → **Environment**):
    - **`DATABASE_URL`** — Supabase Postgres URI. Use the **Session pooler** (or IPv4-friendly) connection string if direct `db.*.supabase.co` fails to resolve from Render; ensure it works with SQLAlchemy (e.g. `postgresql://…` or `postgresql+psycopg2://…`).
