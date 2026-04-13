@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -15,17 +14,12 @@ export function Header() {
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4 md:px-12">
         <Link
           href="/"
-          className="flex items-center"
+          className="flex min-w-0 shrink items-center py-1"
           onClick={() => setOpen(false)}
         >
-          <Image
-            src="/logo.png"
-            alt="Titan Imaging Service"
-            width={220}
-            height={52}
-            className="h-9 w-auto max-w-[200px] object-contain md:h-10 md:max-w-[240px]"
-            priority
-          />
+          <span className="font-display text-[0.7rem] font-bold uppercase leading-tight tracking-[0.14em] text-white min-[400px]:text-xs sm:text-sm sm:tracking-[0.16em] md:text-lg md:tracking-[0.18em] lg:text-2xl lg:tracking-[0.2em] xl:text-[1.75rem]">
+            Titan Imaging Service
+          </span>
         </Link>
 
         <button

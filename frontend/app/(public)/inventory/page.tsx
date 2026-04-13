@@ -22,7 +22,8 @@ export default async function InventoryPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  const { q } = await searchParams;
+  const params = (await searchParams) ?? {};
+  const q = typeof params.q === "string" ? params.q : "";
 
   return (
     <Suspense

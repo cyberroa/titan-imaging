@@ -51,8 +51,8 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
 
   return (
     <>
-      <section className="relative flex min-h-[380px] flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-4 text-center">
-        <div className="absolute inset-0 z-0">
+      <section className="relative flex min-h-[380px] flex-col items-center justify-end overflow-hidden px-6 pb-10 pt-4 text-center md:min-h-[420px] md:pb-14">
+        <div className="pointer-events-none absolute inset-0 z-0">
           <Image
             src="/inventorybanner.png"
             alt=""
@@ -61,56 +61,60 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
             priority
             sizes="100vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black" />
         </div>
-        <div className="relative z-10 w-full max-w-3xl">
+
+        <div className="relative z-10 flex w-full max-w-3xl flex-col items-center">
           <p className="font-display text-[11px] uppercase tracking-[0.2em] text-accent-titanium">
             Live Inventory
           </p>
           <h1 className="mt-2 text-3xl font-bold md:text-4xl">We Have What You Need</h1>
           <p className="mx-auto mt-3 max-w-lg text-text-secondary">
             Search by part number or name. Call{" "}
-            <a href="tel:9047426265" className="font-semibold text-white hover:text-accent-titanium">
+            <a
+              href="tel:9047426265"
+              className="font-semibold text-white underline-offset-2 hover:text-accent-titanium hover:underline"
+            >
               (904) 742-6265
             </a>{" "}
             to speak with someone directly.
           </p>
+
+          <div className="relative z-20 mt-8 w-full max-w-xl">
+            <div className="flex overflow-hidden rounded-lg border border-white/10 bg-background-raised/95 shadow-lg shadow-black/40">
+              <input
+                className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-base text-white outline-none placeholder:text-text-muted"
+                placeholder="Search part number or name..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="bg-accent-titanium px-6 py-3.5 text-sm font-semibold text-black transition hover:brightness-110"
+              >
+                Search
+              </button>
+            </div>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {pills.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFilter(key)}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition ${
+                    filter === key
+                      ? "border-accent-titanium bg-accent-titanium text-black"
+                      : "border-white/15 text-text-muted hover:border-white/25 hover:text-text-secondary"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
-
-      <div className="mx-auto -mt-8 w-full max-w-xl px-6">
-        <div className="flex overflow-hidden rounded-lg border border-white/10 bg-background-raised/95">
-          <input
-            className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-base text-white outline-none placeholder:text-text-muted"
-            placeholder="Search part number or name..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            autoComplete="off"
-          />
-          <button
-            type="button"
-            className="bg-accent-titanium px-6 py-3.5 text-sm font-semibold text-black transition hover:brightness-110"
-          >
-            Search
-          </button>
-        </div>
-        <div className="relative z-10 mt-4 flex flex-wrap justify-center gap-2">
-          {pills.map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setFilter(key)}
-              className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition ${
-                filter === key
-                  ? "border-accent-titanium bg-accent-titanium text-black"
-                  : "border-white/15 text-text-muted hover:border-white/25 hover:text-text-secondary"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="mx-auto mt-12 max-w-5xl px-6 pb-24">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
