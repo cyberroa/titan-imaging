@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -53,7 +54,7 @@ export default function AboutPage() {
       <section className="relative flex min-h-[45vh] flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-4 text-center">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/aboutus.png"
+            src={IMAGES.aboutUs}
             alt=""
             fill
             className="object-cover"
@@ -109,7 +110,7 @@ export default function AboutPage() {
           <div className="relative">
             <div className="absolute -inset-1 rounded-xl bg-gradient-to-br from-accent-titanium/25 to-transparent opacity-30" />
             <Image
-              src="/abouttitant.png"
+              src={IMAGES.aboutTitant}
               alt="Titan Imaging technician working on PET/CT system"
               width={640}
               height={420}

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import { SiteJsonLd } from "@/components/seo/SiteJsonLd";
+import { IMAGES } from "@/lib/images";
 import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
     description: defaultDescription,
     images: [
       {
-        url: "/titanimagebanner.png",
+        url: IMAGES.titanBanner,
         width: 1920,
         height: 1080,
         alt: "Titan Imaging Service — medical imaging parts and service",
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Titan Imaging Service | CT & PET Solutions",
     description: defaultDescription,
-    images: ["/titanimagebanner.png"],
+    images: [IMAGES.titanBanner],
   },
   robots: {
     index: true,

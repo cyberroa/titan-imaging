@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { IMAGES } from "@/lib/images";
 import { MOCK_PARTS, type PartRow } from "@/lib/inventory-mock";
 
 type Filter = "all" | "in-stock" | "CT" | "PET" | "General";
@@ -54,7 +55,7 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
       <section className="relative flex min-h-[380px] flex-col items-center justify-end overflow-hidden px-6 pb-10 pt-4 text-center md:min-h-[420px] md:pb-14">
         <div className="pointer-events-none absolute inset-0 z-0">
           <Image
-            src="/inventorybanner.png"
+            src={IMAGES.inventoryBanner}
             alt=""
             fill
             className="object-cover"

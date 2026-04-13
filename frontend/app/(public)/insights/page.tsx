@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
   title: "Industry Insight",
@@ -33,7 +34,7 @@ type InsightPost = {
 const posts: InsightPost[] = [
   {
     featured: true,
-    image: "/servicesimage.png",
+    image: IMAGES.servicesImage,
     imageAlt: "CT scanner and medical imaging technology",
     category: "Installation",
     date: "2026",
@@ -46,7 +47,7 @@ const posts: InsightPost[] = [
   },
   {
     featured: false,
-    image: "/abouttitant.png",
+    image: IMAGES.aboutTitant,
     imageAlt: "Technician working on PET/CT system",
     category: "De-Installation",
     date: "—",
@@ -57,7 +58,7 @@ const posts: InsightPost[] = [
   },
   {
     featured: false,
-    image: "/scan.png",
+    image: IMAGES.scan,
     imageAlt: "CT/PET imaging scan",
     category: "Selling",
     date: "—",
@@ -74,7 +75,7 @@ export default function InsightsPage() {
       <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-4 text-center">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/aboutus.png"
+            src={IMAGES.aboutUs}
             alt=""
             fill
             className="object-cover"
