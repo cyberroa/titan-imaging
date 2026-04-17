@@ -7,6 +7,43 @@ import httpx
 from app.settings import get_settings
 
 
+async def send_customer_email(to_email: str, subject: str, text: str) -> bool:
+    """
+    Send a transactional email to a customer (alerts, outreach). Returns False if skipped or failed.
+    """
+    settings = get_settings()
+    if not settings.resend_api_key:
+        return False
+    email_from = settings.email_from_customer or settings.email_from or settings.admin_notify_email
+    if not email_from:
+        return False
+    body = {
+        "from": email_from,
+        "to": [to_email],
+        "subject": subject,
+        "text": text,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            res = await client.post(
+                "https://api.resend.com/emails",
+                json=body,
+                headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+            )
+        return res.is_success
+    except Exception:
+        return False
+
+
+async def send_bulk_emails(recipients: list[str], subject: str, text: str) -> int:
+    """Send the same message to each recipient. Returns count of successful sends."""
+    n = 0
+    for addr in recipients:
+        if await send_customer_email(addr.strip(), subject, text):
+            n += 1
+    return n
+
+
 async def maybe_send_admin_email(subject: str, text: str, payload: dict) -> None:
     """
     Best-effort email. Never raise to callers; failures should not break form UX.

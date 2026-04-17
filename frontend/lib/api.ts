@@ -47,6 +47,45 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   return (await res.json()) as T;
 }
 
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Retries when failure looks transient (cold start, network blip, 5xx). Skips retry on typical 4xx. */
+function defaultShouldRetry(error: unknown): boolean {
+  if (error instanceof ApiError) {
+    return error.status >= 500 || error.status === 429 || error.status === 408;
+  }
+  return true;
+}
+
+export type WithRetryOptions = {
+  attempts?: number;
+  baseDelayMs?: number;
+  shouldRetry?: (error: unknown, attemptIndex: number) => boolean;
+};
+
+export async function withRetry<T>(fn: () => Promise<T>, options?: WithRetryOptions): Promise<T> {
+  const attempts = options?.attempts ?? 3;
+  const baseDelayMs = options?.baseDelayMs ?? 400;
+  const shouldRetry = options?.shouldRetry ?? ((err) => defaultShouldRetry(err));
+
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      const canRetry = i < attempts - 1 && shouldRetry(e, i);
+      if (!canRetry) {
+        throw e;
+      }
+      await sleep(baseDelayMs * (i + 1));
+    }
+  }
+  throw last;
+}
+
 export type ApiCategory = {
   id: string;
   name: string;

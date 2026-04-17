@@ -45,6 +45,28 @@ class Part(Base):
     )
 
     category: Mapped["Category | None"] = relationship(back_populates="parts")
+    alert_subscriptions: Mapped[list["InventoryAlertSubscription"]] = relationship(
+        back_populates="part", cascade="all, delete-orphan"
+    )
+
+
+class InventoryAlertSubscription(Base):
+    __tablename__ = "inventory_alert_subscriptions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(320), nullable=False, index=True)
+    part_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("parts.id", ondelete="CASCADE"), nullable=False
+    )
+    query_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    active: Mapped[bool] = mapped_column(default=True, nullable=False)
+    unsubscribe_token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_notified_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    part: Mapped["Part"] = relationship(back_populates="alert_subscriptions")
 
 
 class ContactSubmission(Base):
