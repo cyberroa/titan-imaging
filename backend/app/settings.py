@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     resend_api_key: str | None = None
     admin_notify_email: str | None = None
     email_from: str | None = None
+    email_from_customer: str | None = None
+
+    supabase_url: str | None = None
+    supabase_jwt_secret: str | None = None
+    admin_email_allowlist: str = ""
+    public_site_url: str = "http://localhost:3000"
+    public_api_url: str | None = None
 
     @property
     def cors_origin_list(self) -> list[str]:
@@ -24,6 +31,13 @@ class Settings(BaseSettings):
         if not raw:
             return []
         return [o.strip() for o in raw.split(",") if o.strip()]
+
+    @property
+    def admin_email_allowlist_set(self) -> set[str]:
+        raw = (self.admin_email_allowlist or "").strip()
+        if not raw:
+            return set()
+        return {e.strip().lower() for e in raw.split(",") if e.strip()}
 
 
 @lru_cache

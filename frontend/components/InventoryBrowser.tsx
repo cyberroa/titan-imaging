@@ -3,8 +3,59 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { apiFetch, type ApiCategory, type ApiPart } from "@/lib/api";
+import { apiFetch, getApiBaseUrl, withRetry, type ApiCategory, type ApiPart } from "@/lib/api";
 import { IMAGES } from "@/lib/images";
+
+function PartAlertForm({ partNumber }: { partNumber: string }) {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "ok" | "err">("idle");
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("idle");
+    try {
+      await apiFetch<{ ok: boolean }>("/api/v1/inventory-alerts/subscribe", {
+        method: "POST",
+        body: JSON.stringify({ email, part_number: partNumber }),
+      });
+      setStatus("ok");
+      setEmail("");
+    } catch {
+      setStatus("err");
+    }
+  }
+
+  return (
+    <form onSubmit={(e) => void onSubmit(e)} className="mt-4 space-y-2 border-t border-white/10 pt-4">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted">
+        Email when back in stock
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="you@company.com"
+          className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <button
+          type="submit"
+          className="rounded-md bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15"
+        >
+          Notify me
+        </button>
+      </div>
+      {status === "ok" ? (
+        <p className="text-xs text-emerald-300">You&apos;re on the list. We&apos;ll email you when it&apos;s available.</p>
+      ) : null}
+      {status === "err" ? (
+        <p className="text-xs text-red-300">Could not subscribe. Try again or call us.</p>
+      ) : null}
+    </form>
+  );
+}
 
 type Filter = "all" | "in-stock" | "CT" | "PET" | "General";
 
@@ -15,6 +66,13 @@ type UiPartRow = {
   category: "CT" | "PET" | "General";
   stock: number;
 };
+
+function normalizeUiCategory(labelOrSlug: string): UiPartRow["category"] {
+  const l = labelOrSlug.trim().toLowerCase();
+  if (l === "ct") return "CT";
+  if (l === "pet") return "PET";
+  return "General";
+}
 
 function filterParts(parts: UiPartRow[], search: string, filter: Filter): UiPartRow[] {
   const q = search.trim().toLowerCase();
@@ -30,7 +88,13 @@ function filterParts(parts: UiPartRow[], search: string, filter: Filter): UiPart
   });
 }
 
-export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: string }) {
+export function InventoryBrowser({
+  initialSearch = "",
+  unsubscribedBanner = false,
+}: {
+  initialSearch?: string;
+  unsubscribedBanner?: boolean;
+}) {
   const [search, setSearch] = useState(initialSearch);
   const [filter, setFilter] = useState<Filter>("all");
   const [parts, setParts] = useState<UiPartRow[]>([]);
@@ -47,30 +111,40 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
       setLoading(true);
       setError(null);
       try {
-        const [categories, apiParts] = await Promise.all([
-          apiFetch<ApiCategory[]>("/api/v1/categories"),
-          apiFetch<ApiPart[]>("/api/v1/parts?limit=200"),
-        ]);
+        const mapped = await withRetry(
+          async () => {
+            const [categories, apiParts] = await Promise.all([
+              apiFetch<ApiCategory[]>("/api/v1/categories"),
+              apiFetch<ApiPart[]>("/api/v1/parts?limit=200"),
+            ]);
 
-        const bySlug = new Map(categories.map((c) => [c.slug, c.name] as const));
-        const mapped: UiPartRow[] = apiParts.map((p) => {
-          const catSlug = p.category ?? "general";
-          const label = bySlug.get(catSlug) ?? catSlug;
-          const normalizedCategory =
-            label.toLowerCase() === "ct" ? "CT" : label.toLowerCase() === "pet" ? "PET" : "General";
+            const bySlug = new Map(categories.map((c) => [c.slug, c.name] as const));
+            return apiParts.map((p) => {
+              const catSlug = p.category ?? "general";
+              const label = bySlug.get(catSlug) ?? catSlug;
 
-          return {
-            id: p.id,
-            partNumber: p.part_number,
-            name: p.name,
-            category: normalizedCategory,
-            stock: p.stock_quantity,
-          };
-        });
+              return {
+                id: p.id,
+                partNumber: p.part_number,
+                name: p.name,
+                category: normalizeUiCategory(label),
+                stock: p.stock_quantity,
+              };
+            });
+          },
+          { attempts: 3, baseDelayMs: 400 },
+        );
 
         if (!cancelled) setParts(mapped);
       } catch {
-        if (!cancelled) setError("Unable to load inventory right now. Please try again soon.");
+        if (!cancelled) {
+          const base = getApiBaseUrl();
+          setError(
+            process.env.NODE_ENV === "development"
+              ? `Unable to load inventory (requested ${base}). Start the FastAPI backend and ensure NEXT_PUBLIC_API_URL in frontend/.env.local matches the uvicorn port, then restart npm run dev.`
+              : "Unable to load inventory right now. Please try again soon.",
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -160,6 +234,11 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
       </section>
 
       <div className="mx-auto mt-12 max-w-5xl px-6 pb-24">
+        {unsubscribedBanner ? (
+          <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm text-emerald-100">
+            You have been unsubscribed from inventory alerts for that part.
+          </div>
+        ) : null}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-text-muted">Available Parts</h2>
           <span className="text-sm text-text-muted">
@@ -226,6 +305,7 @@ export function InventoryBrowser({ initialSearch = "" }: { initialSearch?: strin
                       {inStock ? `${p.stock} in stock` : "Out of stock"}
                     </span>
                   </div>
+                  {!inStock ? <PartAlertForm partNumber={p.partNumber} /> : null}
                 </div>
               );
             })}

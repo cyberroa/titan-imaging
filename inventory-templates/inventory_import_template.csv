@@ -1,0 +1,3 @@
+part_number,name,description,category_slug,stock_quantity,price,status
+CT-1001,CT X-Ray Tube Assembly,Example row,ct,3,12500.00,in_stock
+PET-2002,PET PMT Assembly,Example out of stock,pet,0,,out_of_stock

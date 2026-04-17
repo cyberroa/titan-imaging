@@ -20,10 +20,11 @@ export const metadata: Metadata = {
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; unsubscribed?: string }>;
 }) {
   const params = (await searchParams) ?? {};
   const q = typeof params.q === "string" ? params.q : "";
+  const unsubscribedBanner = params.unsubscribed === "1";
 
   return (
     <Suspense
@@ -31,7 +32,7 @@ export default async function InventoryPage({
         <div className="min-h-[60vh] animate-pulse bg-gradient-to-b from-background-muted to-black" />
       }
     >
-      <InventoryBrowser initialSearch={q ?? ""} />
+      <InventoryBrowser initialSearch={q ?? ""} unsubscribedBanner={unsubscribedBanner} />
     </Suspense>
   );
 }
