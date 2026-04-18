@@ -1,0 +1,3 @@
+email,name,company,phone,role,tags,source,notes,consent_marketing
+ops@stmarys-radiology.example,Jane Doe,St. Mary's Radiology,555-010-1010,Imaging Director,"hospital,repeat",import,Existing Titan customer since 2019,true
+procurement@citygeneral.example,John Smith,City General Hospital,555-020-2020,Procurement Lead,"hospital,cold",import,"Interested in CT tubes; send quarterly drop",false

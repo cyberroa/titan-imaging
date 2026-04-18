@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { apiFetch, getApiBaseUrl, withRetry, type ApiCategory, type ApiPart } from "@/lib/api";
 import { IMAGES } from "@/lib/images";
+import { track } from "@/lib/track";
 
 function PartAlertForm({ partNumber }: { partNumber: string }) {
   const [email, setEmail] = useState("");
@@ -18,6 +19,11 @@ function PartAlertForm({ partNumber }: { partNumber: string }) {
         method: "POST",
         body: JSON.stringify({ email, part_number: partNumber }),
       });
+      void track(
+        "part_alert_subscribe",
+        { part_number: partNumber },
+        { email },
+      );
       setStatus("ok");
       setEmail("");
     } catch {
@@ -104,6 +110,15 @@ export function InventoryBrowser({
   useEffect(() => {
     setSearch(initialSearch);
   }, [initialSearch]);
+
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 2) return;
+    const t = setTimeout(() => {
+      void track("inventory_search", { query: q, filter });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [search, filter]);
 
   useEffect(() => {
     let cancelled = false;
@@ -286,6 +301,13 @@ export function InventoryBrowser({
                 <div
                   key={p.id}
                   className="rounded-xl border border-white/10 bg-[#0d0d0d] p-6 transition hover:border-white/20"
+                  onClick={() =>
+                    void track("part_view", {
+                      part_number: p.partNumber,
+                      category: p.category,
+                      in_stock: inStock,
+                    })
+                  }
                 >
                   <p className="font-display text-xs tracking-wider text-accent-titanium">
                     {p.partNumber}

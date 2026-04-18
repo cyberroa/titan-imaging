@@ -376,12 +376,19 @@ async def admin_import_parts(
 @router.post("/outreach/send", response_model=OutreachSendOut)
 async def admin_outreach_send(
     body: OutreachSendIn,
+    db: Session = Depends(get_db),
 ):
-    from app.email import send_bulk_emails
+    from app.email import send_customer_email
+    from app.suppression import is_suppressed
 
-    recipients = [str(e) for e in body.recipients]
-    n = await send_bulk_emails(recipients, body.subject, body.body)
-    return OutreachSendOut(sent=n)
+    sent = 0
+    for addr in body.recipients:
+        email = str(addr).strip().lower()
+        if is_suppressed(db, email):
+            continue
+        if await send_customer_email(email, body.subject, body.body):
+            sent += 1
+    return OutreachSendOut(sent=sent)
 
 
 @router.get("/inventory-alerts", response_model=list[dict])

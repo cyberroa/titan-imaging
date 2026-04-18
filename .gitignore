@@ -14,3 +14,19 @@ build/
 # OS / editor
 .DS_Store
 Thumbs.db
+
+# Node / frontend
+node_modules/
+.next/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# IDE / editor per-user config
+.cursor/
+.vscode/
+.idea/
+*.swp
+
+# Local terminal dumps captured by Cursor
+terminals/
