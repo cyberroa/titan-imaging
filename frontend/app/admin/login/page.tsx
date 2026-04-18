@@ -13,10 +13,12 @@ function LoginInner() {
   async function signIn() {
     const supabase = createClient();
     const next = "/admin/parts";
+    const site =
+      process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") || window.location.origin;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        redirectTo: `${site}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
   }
