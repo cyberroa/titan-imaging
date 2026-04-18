@@ -6,7 +6,22 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from app.db import Base
-from app.models import Category, ContactSubmission, Part, SellSubmission  # noqa: F401
+from app.models import (  # noqa: F401
+    BrowserSession,
+    Campaign,
+    CampaignRecipient,
+    Category,
+    ContactSubmission,
+    Customer,
+    EmailTemplate,
+    Event,
+    InventoryAlertSubscription,
+    Part,
+    Segment,
+    SellSubmission,
+    SocialPost,
+    Unsubscribe,
+)
 from app.settings import get_settings
 
 config = context.config

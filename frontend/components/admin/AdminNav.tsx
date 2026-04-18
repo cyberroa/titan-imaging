@@ -8,6 +8,11 @@ const LINKS = [
   { href: "/admin/parts", label: "Parts" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/import", label: "Import" },
+  { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/templates", label: "Templates" },
+  { href: "/admin/segments", label: "Segments" },
+  { href: "/admin/campaigns", label: "Campaigns" },
+  { href: "/admin/social", label: "Social" },
   { href: "/admin/alerts", label: "Alerts" },
   { href: "/admin/outreach", label: "Outreach" },
 ] as const;

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { identify, track } from "@/lib/track";
 
 export function SellForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -28,6 +29,14 @@ export function SellForm() {
         method: "POST",
         body: JSON.stringify(payload),
       });
+      if (payload.email) {
+        void identify(payload.email);
+      }
+      void track(
+        "sell_submit",
+        { company: payload.company ?? null },
+        { email: payload.email || undefined },
+      );
       form.reset();
       setStatus("sent");
     } catch {

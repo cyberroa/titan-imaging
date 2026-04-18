@@ -25,6 +25,13 @@ class Settings(BaseSettings):
     public_site_url: str = "http://localhost:3000"
     public_api_url: str | None = None
 
+    # Phase 4A — campaigns, engagement, social
+    resend_webhook_secret: str | None = None
+    mailing_address: str | None = None
+    unsubscribe_signing_secret: str | None = None
+    social_webhook_url: str | None = None
+    social_callback_secret: str | None = None
+
     @property
     def cors_origin_list(self) -> list[str]:
         raw = (self.cors_origins or "").strip()

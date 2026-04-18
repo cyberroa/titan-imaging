@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { identify, track } from "@/lib/track";
 
 export function ContactForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -25,6 +26,14 @@ export function ContactForm() {
         method: "POST",
         body: JSON.stringify(payload),
       });
+      if (payload.email) {
+        void identify(payload.email);
+      }
+      void track(
+        "contact_submit",
+        { subject: payload.subject || null },
+        { email: payload.email || undefined },
+      );
       form.reset();
       setStatus("sent");
     } catch {
