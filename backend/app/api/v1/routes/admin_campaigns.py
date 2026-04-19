@@ -288,33 +288,45 @@ async def send_campaign(
     failed_count = 0
     now = dt.datetime.now(dt.timezone.utc)
     for i, r in enumerate(pending):
-        variables = {
-            "email": r.email,
-            "name": (r.customer.name if r.customer and r.customer.name else r.email),
-            "company": (r.customer.company if r.customer else None),
-        }
-        subject, html_out, text_out = template_to_text_html(
-            tpl.subject, tpl.body_md, tpl.body_html, variables
-        )
-        ok, msg_id = await send_campaign_email(
-            r.email,
-            subject,
-            text_out,
-            html=html_out,
-            campaign_id=str(c.id),
-            tags=tags,
-        )
-        if ok:
-            r.status = "sent"
-            r.sent_at = now
-            r.resend_message_id = msg_id
-            sent_count += 1
-        else:
-            r.status = "failed"
-            r.error = "send failed"
+        try:
+            variables = {
+                "email": r.email,
+                "name": (r.customer.name if r.customer and r.customer.name else r.email),
+                "company": (r.customer.company if r.customer else None),
+            }
+            subject, html_out, text_out = template_to_text_html(
+                tpl.subject, tpl.body_md, tpl.body_html, variables
+            )
+            ok, msg_id = await send_campaign_email(
+                r.email,
+                subject,
+                text_out,
+                html=html_out,
+                campaign_id=str(c.id),
+                tags=tags,
+            )
+            if ok:
+                r.status = "sent"
+                r.sent_at = now
+                r.resend_message_id = msg_id
+                sent_count += 1
+            else:
+                r.status = "failed"
+                r.error = "send failed"
+                failed_count += 1
+                errors.append(f"{r.email}: send failed")
+        except Exception as exc:
+            db.rollback()
+            r = db.get(CampaignRecipient, r.id)
+            if r is not None:
+                r.status = "failed"
+                r.error = f"{type(exc).__name__}: {exc}"[:500]
             failed_count += 1
-            errors.append(f"{r.email}: send failed")
-        db.commit()
+            errors.append(f"{r.email if r else '?'}: {type(exc).__name__}")
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
         if (i + 1) % SEND_BATCH_SIZE == 0 and i + 1 < len(pending):
             await asyncio.sleep(SEND_BATCH_PAUSE_SECONDS)
 
