@@ -97,6 +97,8 @@ class OutreachSendIn(BaseModel):
 
 class OutreachSendOut(BaseModel):
     sent: int
+    skipped_suppressed: int = 0
+    failed: int = 0
 
 
 # --------------------------------------------------------------------------
