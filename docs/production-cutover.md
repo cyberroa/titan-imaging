@@ -179,7 +179,7 @@ On cutover day with the above recommendations:
 
 | Service | Plan | Monthly |
 |---|---|---|
-| Vercel | Hobby (frontend) | $0 |
+| Vercel | Pro (required for commercial + team) | $20 |
 | Render (prod) | Starter | $7 |
 | Render (staging) | Free | $0 |
 | Supabase (prod) | Free → Pro once >500MB | $0 → $25 |
@@ -187,7 +187,20 @@ On cutover day with the above recommendations:
 | Resend | Free (3k/mo) → Pro ($20) once >3k | $0 → $20 |
 | Make | Free (1k ops/mo) | $0 |
 | Better Stack | Free | $0 |
-| **Total** | | **$7 → $52** |
+| **Total at cutover** | | **$27** |
+| **Total at maturity** (>500MB DB, >3k emails) | | **$72** |
 
-The jump to ~$52/month happens only when you actually outgrow free tiers,
-which for Titan Imaging's volume is likely 12+ months out.
+**Why Vercel Pro is non-optional at cutover.** Vercel's Hobby plan forbids
+commercial use and restricts deployments to the single account owner. As
+soon as Titan Imaging is serving real customers — and as soon as more than
+one person pushes code — you need Pro. Don't skip this line item.
+
+**Short-term workaround while still on Hobby.** Transfer the Vercel project
+to whichever single person is doing the pushes (Vercel → project →
+Settings → Advanced → Transfer Project). Their pushes will deploy cleanly.
+This works until you're ready to commit to Pro, but it's a bandaid — the
+real fix is the upgrade.
+
+The jump to ~$72/month happens only when you actually outgrow free tiers
+on Supabase and Resend, which for Titan Imaging's volume is likely 12+
+months out.

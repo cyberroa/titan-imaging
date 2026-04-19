@@ -21,6 +21,7 @@ docs/
   phase4a-make-setup.md   Make/LinkedIn runbook
   privacy.md              Privacy + consent policy (public + internal)
   production-cutover.md   Checklist + cost + hardening for going live
+  vercel-transfer.md      Transferring the Vercel project between Hobby accounts
 inventory-templates/
   README.md               Bulk-import conventions
   inventory_import_template.csv
