@@ -17,11 +17,12 @@ Public marketing site + admin analytics/CRM platform for Titan Imaging
 backend/               FastAPI app, Alembic migrations, requirements.txt
 frontend/              Next.js app
 docs/
-  deploy-staging.md       Staging environment setup (Supabase/Render/Vercel/Resend/Make)
-  phase4a-make-setup.md   Make/LinkedIn runbook
-  privacy.md              Privacy + consent policy (public + internal)
-  production-cutover.md   Checklist + cost + hardening for going live
-  vercel-transfer.md      Transferring the Vercel project between Hobby accounts
+  analytics-adblock-mitigation.md  Strategy for Brave/uBlock/Pi-hole coverage loss
+  deploy-staging.md                Staging environment setup (Supabase/Render/Vercel/Resend/Make)
+  phase4a-make-setup.md            Make/LinkedIn runbook
+  privacy.md                       Privacy + consent policy (public + internal)
+  production-cutover.md            Checklist + cost + hardening for going live
+  vercel-transfer.md               Transferring the Vercel project between Hobby accounts
 inventory-templates/
   README.md               Bulk-import conventions
   inventory_import_template.csv

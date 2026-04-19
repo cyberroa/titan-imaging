@@ -70,10 +70,10 @@ const posts: InsightPost[] = [
 export default function InsightsPage() {
   return (
     <>
-      <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-4 text-center">
+      <section className="relative flex min-h-[45vh] flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-4 text-center">
         <div className="absolute inset-0 z-0">
           <Image src={IMAGES.aboutUs} alt="" fill className="object-cover" priority sizes="100vw" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/80 to-black" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/75 to-black" />
         </div>
         <div className="relative z-10 max-w-2xl">
           <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
