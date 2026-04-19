@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from "@/lib/api-admin";
@@ -36,11 +37,22 @@ export default function AdminOutreachPage() {
     setError(null);
     setMessage(null);
     try {
-      const out = await apiFetchWithAuth<{ sent: number }>("/api/v1/admin/outreach/send", token, {
+      const out = await apiFetchWithAuth<{
+        sent: number;
+        skipped_suppressed?: number;
+        failed?: number;
+      }>("/api/v1/admin/outreach/send", token, {
         method: "POST",
         body: JSON.stringify({ recipients: emails, subject: subject.trim(), body: body.trim() }),
       });
-      setMessage(`Sent to ${out.sent} recipient(s).`);
+      const parts = [`Sent to ${out.sent} recipient(s)`];
+      if (out.skipped_suppressed && out.skipped_suppressed > 0) {
+        parts.push(`${out.skipped_suppressed} skipped (suppressed)`);
+      }
+      if (out.failed && out.failed > 0) {
+        parts.push(`${out.failed} failed`);
+      }
+      setMessage(`${parts.join(" · ")}.`);
     } catch (err) {
       setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Send failed");
     } finally {
@@ -56,8 +68,25 @@ export default function AdminOutreachPage() {
         </p>
         <h1 className="mt-3 text-3xl font-bold md:text-4xl">Outreach</h1>
         <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Send a one-off message via Resend. Configure <code className="text-accent-titanium">RESEND_API_KEY</code>{" "}
-          and customer from-address on the API.
+          Send a one-off plain-text message via Resend. Suppressed addresses
+          (global unsubscribes, bounces, complaints) are skipped automatically.
+        </p>
+        <p className="mx-auto mt-3 max-w-2xl text-sm text-text-muted">
+          For anything reusable — newsletters, announcements, drip sequences —
+          use{" "}
+          <Link href="/admin/campaigns" className="text-accent-titanium underline">
+            Campaigns
+          </Link>{" "}
+          with a saved{" "}
+          <Link href="/admin/templates" className="text-accent-titanium underline">
+            template
+          </Link>{" "}
+          and{" "}
+          <Link href="/admin/segments" className="text-accent-titanium underline">
+            segment
+          </Link>
+          . Those sends include open/click tracking and appear on the customer
+          timeline.
         </p>
       </section>
 

@@ -382,13 +382,18 @@ async def admin_outreach_send(
     from app.suppression import is_suppressed
 
     sent = 0
+    skipped = 0
+    failed = 0
     for addr in body.recipients:
         email = str(addr).strip().lower()
         if is_suppressed(db, email):
+            skipped += 1
             continue
         if await send_customer_email(email, body.subject, body.body):
             sent += 1
-    return OutreachSendOut(sent=sent)
+        else:
+            failed += 1
+    return OutreachSendOut(sent=sent, skipped_suppressed=skipped, failed=failed)
 
 
 @router.get("/inventory-alerts", response_model=list[dict])
