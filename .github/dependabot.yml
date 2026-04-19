@@ -25,6 +25,12 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      # Never auto-open PRs for major version bumps on backend deps.
+      # Python ecosystem majors (SQLAlchemy 1->2, Pydantic 1->2, FastAPI
+      # majors) typically require code migration, not drive-by merges.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
@@ -51,11 +57,12 @@ updates:
           - "minor"
           - "patch"
     ignore:
-      - dependency-name: "react"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "react-dom"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "next"
+      # Never auto-open PRs for major version bumps on frontend deps.
+      # Majors frequently contain breaking changes (tailwind v4 moved
+      # PostCSS plugin, eslint v9 flat config, etc.) that require code
+      # changes, not drive-by merges. Upgrade deliberately in a dedicated
+      # PR when ready.
+      - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
