@@ -8,11 +8,14 @@ from typing import Any
 _VAR = re.compile(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_.]*)\s*\}\}")
 
 
-def render_variables(template: str, variables: dict[str, Any]) -> str:
+def render_variables(template: str | None, variables: dict[str, Any]) -> str:
     """Substitute `{{ path.to.key }}` placeholders with values from a dict.
 
     Missing keys become an empty string. Values are converted with `str()`.
+    `None` templates render as empty string.
     """
+    if not template:
+        return ""
 
     def _lookup(path: str) -> str:
         cur: Any = variables
@@ -52,14 +55,14 @@ def render_markdown_min(md: str) -> str:
 
 
 def template_to_text_html(
-    subject_tmpl: str,
-    body_md: str,
+    subject_tmpl: str | None,
+    body_md: str | None,
     body_html: str | None,
     variables: dict[str, Any],
 ) -> tuple[str, str, str]:
-    """Render (subject, html, text) with variables substituted."""
-    subject = render_variables(subject_tmpl, variables)
-    text = render_variables(body_md, variables)
+    """Render (subject, html, text) with variables substituted. Handles NULL inputs."""
+    subject = render_variables(subject_tmpl or "", variables)
+    text = render_variables(body_md or "", variables)
     if body_html:
         html_out = render_variables(body_html, variables)
     else:

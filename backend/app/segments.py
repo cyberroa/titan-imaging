@@ -57,7 +57,11 @@ def build_segment_query(filter_json: dict[str, Any] | None) -> Select:
 
 
 def segment_count(db: Session, filter_json: dict[str, Any] | None) -> int:
-    q = build_segment_query(filter_json).with_only_columns(func.count(Customer.id))
+    q = (
+        build_segment_query(filter_json)
+        .with_only_columns(func.count(Customer.id))
+        .order_by(None)
+    )
     return int(db.scalar(q) or 0)
 
 
