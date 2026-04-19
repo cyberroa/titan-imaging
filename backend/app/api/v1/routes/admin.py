@@ -155,6 +155,10 @@ async def admin_create_part(body: PartCreate, db: Session = Depends(get_db)):
     if db.scalar(select(Part).where(Part.part_number == body.part_number.strip())) is not None:
         raise HTTPException(status_code=400, detail="Part number already exists")
     cid = _category_id_for_slug(db, body.category_slug)
+    # Auto-reconcile status with stock (see admin_update_part for rationale).
+    new_status = body.status
+    if (new_status or "").lower() in ("in_stock", "out_of_stock", ""):
+        new_status = "in_stock" if body.stock_quantity and body.stock_quantity > 0 else "out_of_stock"
     p = Part(
         id=uuid.uuid4(),
         part_number=body.part_number.strip(),
@@ -163,7 +167,7 @@ async def admin_create_part(body: PartCreate, db: Session = Depends(get_db)):
         category_id=cid,
         stock_quantity=body.stock_quantity,
         price=Decimal(str(body.price)) if body.price is not None else None,
-        status=body.status,
+        status=new_status,
     )
     db.add(p)
     db.flush()
@@ -202,6 +206,13 @@ async def admin_update_part(part_id: str, body: PartUpdate, db: Session = Depend
         p.price = Decimal(str(body.price))
     if body.status is not None:
         p.status = body.status
+    # Auto-reconcile status with stock so operators don't have to remember to
+    # flip the status dropdown every time they restock. Explicit statuses like
+    # "discontinued" or "draft" still win: we only swap between in_stock and
+    # out_of_stock based on whether there's inventory on hand.
+    _status_lower = (p.status or "").lower()
+    if _status_lower in ("in_stock", "out_of_stock", ""):
+        p.status = "in_stock" if p.stock_quantity and p.stock_quantity > 0 else "out_of_stock"
     db.flush()
     refresh_part_search_vector(db, p)
     await notify_subscribers_if_became_available(db, p, was_available=was_available)
@@ -338,6 +349,11 @@ async def admin_import_parts(
             else:
                 result.created += 1
             continue
+
+        # Auto-reconcile status with stock on import too, so operators don't
+        # have to remember to flip statuses per-row.
+        if (status or "").lower() in ("in_stock", "out_of_stock", ""):
+            status = "in_stock" if stock and stock > 0 else "out_of_stock"
 
         if existing:
             was_available = is_part_available(existing)
