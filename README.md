@@ -20,6 +20,7 @@ docs/
   deploy-staging.md       Staging environment setup (Supabase/Render/Vercel/Resend/Make)
   phase4a-make-setup.md   Make/LinkedIn runbook
   privacy.md              Privacy + consent policy (public + internal)
+  production-cutover.md   Checklist + cost + hardening for going live
 inventory-templates/
   README.md               Bulk-import conventions
   inventory_import_template.csv
@@ -89,6 +90,15 @@ domain is live, spin up a parallel staging tier following
 [`docs/deploy-staging.md`](docs/deploy-staging.md). Staging gives you a safe
 place to test migrations, email sends, and Make scenarios without touching
 real customers.
+
+## Production cutover
+
+When the domain is ready and you're flipping the switch from "demo" to
+"real customers," work through
+[`docs/production-cutover.md`](docs/production-cutover.md). Covers Render
+cold-start mitigation (upgrade vs. external pinger), email deliverability
+hardening, DNS cutover order, 2FA + secret rotation, observability, and
+projected monthly cost.
 
 ## Privacy
 
