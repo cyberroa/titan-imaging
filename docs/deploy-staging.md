@@ -60,7 +60,7 @@ signing secrets never cross between the two environments.
   - Google Cloud Console (to edit the OAuth client)
   - Resend account
   - Make account (optional at staging setup time)
-- Local Git Bash or PowerShell with the backend venv working (see
+- Local Git Bash with the backend venv working (see
   [`backend/README.md`](../backend/README.md)).
 
 ## Step A — Create the `staging` branch
@@ -130,14 +130,14 @@ From `backend/` with the venv activated:
 
 ```bash
 cd ~/Documents/GitHub/titanimaging/backend
-source .venv/Scripts/activate          # Git Bash
-# .venv\Scripts\activate                # PowerShell
+source .venv/Scripts/activate
 
-export DATABASE_URL="<STAGING-supabase-URI>"    # Git Bash
-# $env:DATABASE_URL="<STAGING-supabase-URI>"    # PowerShell
+export DATABASE_URL="<STAGING-supabase-session-pooler-URI>"
 
 alembic current
 alembic upgrade head
+
+unset DATABASE_URL
 ```
 
 Verify in staging Supabase → **Table Editor** that these tables exist:
@@ -147,9 +147,8 @@ Verify in staging Supabase → **Table Editor** that these tables exist:
 - Phase 4A: `customers`, `segments`, `templates`, `campaigns`,
   `campaign_recipients`, `unsubscribes`, `sessions`, `events`, `social_posts`
 
-> After running migrations against staging, **unset or re-export** your local
-> `DATABASE_URL` to avoid accidentally running future migrations against the
-> wrong DB. Easy trap.
+> After running migrations against staging, run `unset DATABASE_URL` so you
+> do not accidentally run future migrations against the wrong DB.
 
 ## Step E — Staging Render service
 
@@ -383,7 +382,6 @@ export DATABASE_URL="<PROD URI>"
 alembic upgrade head
 
 unset DATABASE_URL   # Git Bash
-# Remove-Item Env:DATABASE_URL   # PowerShell
 ```
 
 ### Hotfixes
