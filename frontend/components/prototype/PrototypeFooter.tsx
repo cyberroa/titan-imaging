@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { TitanMark } from "@/components/prototype/BrandMarks";
 import { PROTO_NAV_MORE, PROTO_NAV_PRIMARY } from "@/lib/prototype-nav";
 
 function GoogleGLogo({ className }: { className?: string }) {
@@ -43,8 +42,10 @@ export function PrototypeFooter() {
     <footer className="mt-0 border-t border-white/10 bg-background-raised">
       <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-[1.4fr_1fr] md:px-12 lg:grid-cols-[1.6fr_1fr_1fr]">
         <div>
-          <TitanMark size="nav" />
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-text-secondary">
+          <p className="font-display text-sm font-bold uppercase tracking-[0.2em] text-white">
+            Titan Imaging Service
+          </p>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-text-secondary">
             Repair, service, parts, and buy/sell support for GE PET/CT systems—built on 30+ years of
             hands-on imaging expertise.
           </p>
