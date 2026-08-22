@@ -4,7 +4,7 @@
 export const IMAGES = {
   logo: "/images/logo.png",
   logoFull: "/images/logo-full.png",
-  titanBanner: "/images/titanimagebanner.png",
+  titanBanner: "/images/ge-omni-petct.png",
   scan: "/images/scan.png",
   aboutUs: "/images/aboutus.png",
   aboutTitant: "/images/abouttitant.png",
