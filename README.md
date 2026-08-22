@@ -94,12 +94,15 @@ Google account whose email is on `NEXT_PUBLIC_ADMIN_EMAIL_ALLOWLIST` and
 
 ## Staging environment
 
-Before the `titanimagingservice.com` domain cuts over to the production
-Vercel deployment, the existing environment doubles as a dev/demo. Once the
-domain is live, spin up a parallel staging tier following
-[`docs/deploy-staging.md`](docs/deploy-staging.md). Staging gives you a safe
-place to test migrations, email sends, and Make scenarios without touching
-real customers.
+**In progress.** The `staging` branch is live on GitHub. Finish setup in
+[`docs/deploy-staging.md`](docs/deploy-staging.md):
+
+- **Test:** `staging` branch → `titan-imaging-staging.vercel.app` (after Vercel alias)
+- **Production:** merge `staging` → `main` → `titanimagingservice.com`
+
+Workflow: feature branch → PR **`staging`** → test → PR **`staging` → `main`**.
+
+The legacy **`prod`** branch is retired; delete it on GitHub once staging smoke tests pass.
 
 ## Production cutover
 

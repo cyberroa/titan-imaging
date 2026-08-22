@@ -1,7 +1,7 @@
 # Titan Imaging Website — Implementation Plan
 
 > **Repo:** `cyberroa/titan-imaging` (GitHub). **Vercel:** set **Root Directory** to `frontend` for deploys.
-> **Branch workflow:** Feature branches → PR → merge to `main` (production on Vercel). `prod` branch tracks production cutover work.
+> **Branch workflow:** Feature branch → PR into `staging` → test on staging → PR into `main` (production on Vercel). The legacy `prod` branch is retired; delete it on GitHub once staging is verified.
 > **Stack:** Vercel (frontend) · Supabase (DB + Auth + Storage) · Render (FastAPI backend) · Resend (email) · Make (social automation) · Calendly (bookings)
 
 **Status (as of May 2026):**
@@ -15,7 +15,7 @@
 Operational items remaining for full production readiness:
 - Domain verification for `titanimagingservice.com` in Resend (waiting on uncle's DNS access)
 - Vercel project transfer from `cyberroa` → `byronroark` account (free; doc in `docs/vercel-transfer.md`)
-- Staging environment provisioning (doc in `docs/deploy-staging.md`)
+- Staging environment provisioning — **in progress** ([`docs/deploy-staging.md`](docs/deploy-staging.md); `staging` branch created)
 - Brave/adblock mitigation Option B — **done** (`POST /api/v1/activity`; see `docs/analytics-adblock-mitigation.md`)
 
 ---
@@ -533,9 +533,11 @@ Frontend at http://localhost:3000, backend at http://localhost:8080. Make sure `
 ### 7. Branch hygiene
 
 - Default branch: `main` (production deploys from here)
-- `prod` branch tracks production cutover work
-- Always feature-branch off `main`, PR back to `main`
-- Vercel auto-deploys preview for every PR; production deploys on merge to `main`
+- Default branch: `main` (production deploys from here)
+- Long-lived test branch: `staging` → Preview URL `titan-imaging-staging.vercel.app` (after Vercel domain alias)
+- Retired: `prod` branch — use `staging` → `main` instead; delete `prod` on GitHub once staging is verified
+- Feature-branch off `staging` (or off `main` for hotfixes); PR into `staging` first, then `staging` → `main`
+- Vercel: Preview deploys for PRs + `staging` branch; production deploys on merge to `main`
 
 ### 8. Useful local checks before pushing
 
@@ -566,7 +568,7 @@ python -c "from app.main import app; print('ok')"
 - [x] Dependabot + GitHub Actions security audit
 - [ ] `titanimagingservice.com` verified in Resend *(pending DNS access from uncle)*
 - [ ] Vercel project transferred to `byronroark` account *(see `docs/vercel-transfer.md`)*
-- [ ] Staging tier provisioned *(see `docs/deploy-staging.md`)*
+- [ ] Staging tier provisioned *(in progress — see `docs/deploy-staging.md`)*
 - [ ] Cal.com account *(deferred — not on critical path)*
 
 ---

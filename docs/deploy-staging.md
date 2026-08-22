@@ -1,10 +1,28 @@
 # Staging environment setup
 
 How to stand up a parallel staging copy of Titan Imaging (Supabase + Render +
-Vercel + Make + Resend) so new features can be tested against non-production
+Vercel + Make + Resend) so new features are tested against non-production
 data before promotion to `main`.
 
 Estimated time: **~45 minutes** (mostly DNS/OAuth propagation waits).
+
+## Setup progress
+
+| Step | Status |
+|------|--------|
+| A — `staging` Git branch from `main` | **Done** (`origin/staging`) |
+| B — Supabase project `titanimaging-staging` | **Your action** (see below) |
+| C — Supabase Auth + Google OAuth | After Step B |
+| D — Migrations on staging DB | After Step B |
+| E — Render `titan-imaging-api-staging` | After Step D |
+| F — Vercel Preview env + domain alias | After Step E |
+| G–J — Smoke tests, Resend, Make | After Step F |
+
+**Git workflow (replaces `prod` branch):**
+
+- Feature branch → PR into **`staging`** → test on `titan-imaging-staging.vercel.app`
+- **`staging`** → PR into **`main`** → production deploy to `titanimagingservice.com`
+- Delete the remote **`prod`** branch on GitHub once staging smoke tests pass.
 
 ## When to run this
 
@@ -47,7 +65,9 @@ signing secrets never cross between the two environments.
 
 ## Step A — Create the `staging` branch
 
-Long-lived branch that maps 1:1 to the staging deployments.
+**Status: done.** Branch `staging` tracks `main` at `origin/staging`.
+
+If you need to recreate it later:
 
 ```bash
 cd ~/Documents/GitHub/titanimaging
@@ -59,10 +79,11 @@ git push -u origin staging
 
 ## Step B — Staging Supabase project
 
+**Status: manual — create in the Supabase dashboard now.**
+
 1. [supabase.com](https://supabase.com) → **New project**.
-   - Name: `titanimaging-staging`
-   - Region: **same as production** (e.g. `us-east-1`) to minimize latency
-     when Render + Vercel staging hit it.
+   - Name: **`titanimaging-staging`**
+   - Region: **same as production** (check prod project → Settings → General → Region; e.g. `East US (North Virginia)` / `us-east-1`)
    - DB password: use a **different** password than prod. Store in your
      password manager.
    - Plan: Free tier.
@@ -74,11 +95,18 @@ git push -u origin staging
    | Project URL | Settings → API | `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL` |
    | `anon` public key | Settings → API | `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
    | JWT secret | Settings → API → JWT Settings | `SUPABASE_JWT_SECRET` |
-   | Connection string (URI) | Settings → Database → Connection string | `DATABASE_URL` |
+   | Connection string (URI) | Settings → Database → Connection string → **Session pooler** | `DATABASE_URL` |
 
-   Use the **Session pooler** connection string (port 5432), **not** the
+   Use the **Session pooler** connection string (port **5432**), **not** the
    transaction pooler (6543) — Alembic migrations require session-mode
    connections.
+
+   **When the project is ready, paste these four values somewhere safe and tell the agent (or continue Step D yourself):**
+
+   - Staging project URL (`https://<ref>.supabase.co`)
+   - Staging `anon` public key
+   - Staging JWT secret
+   - Staging session-pooler `DATABASE_URL`
 
 ## Step C — Supabase Auth config (staging)
 
@@ -245,7 +273,7 @@ mechanism so the `staging` branch auto-deploys to a stable Preview URL.
    - `/admin/alerts`, `/admin/outreach`
 4. Open the public site `https://titan-imaging-staging.vercel.app` in a
    fresh incognito session → accept the consent banner → navigate to
-   `/inventory` → in devtools Network tab, confirm `POST /api/v1/events`
+   `/inventory` → in devtools Network tab, confirm `POST /api/v1/activity`
    returns 200. That proves tracking is wired.
 
 ## Step H — Resend webhook for staging
