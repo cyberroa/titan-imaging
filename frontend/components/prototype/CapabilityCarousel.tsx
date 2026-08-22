@@ -118,7 +118,7 @@ export function CapabilityCarousel() {
     if ("onscrollend" in window) {
       scroller.addEventListener("scrollend", clear, { once: true });
     } else {
-      window.setTimeout(clear, 450);
+      setTimeout(clear, 450);
     }
   }, []);
 
