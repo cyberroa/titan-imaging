@@ -15,8 +15,10 @@ Estimated time: **~45 minutes** (mostly DNS/OAuth propagation waits).
 | C — Supabase Auth + Google OAuth | **Done** |
 | D — Migrations on staging DB | **Done** |
 | E — Render `titan-imaging-api-staging` | **Done** (`https://titan-imaging-api-staging.onrender.com`) |
-| F — Vercel Preview env + domain alias | **Your action** (below) |
-| G–J — Smoke tests, Resend, Make | After Step F |
+| F — Vercel Preview env + domain alias | **Done** (`https://titan-imaging-staging.vercel.app`) |
+| G — Smoke tests (admin + tracking) | **Done** (inventory, OAuth, `/admin/live`, `/admin/parts`) |
+| H–J — Resend webhook, Make, campaign smoke | Optional when testing campaigns/social |
+| Delete remote `prod` branch | Recommended cleanup |
 
 **Git workflow (replaces `prod` branch):**
 
@@ -156,7 +158,7 @@ Verify in staging Supabase → **Table Editor** that these tables exist:
 
 ## Step F — Staging Vercel environment
 
-**Status: manual — do this now.**
+**Status: done** — Preview env vars set; domain `titan-imaging-staging.vercel.app` on branch `staging`; inventory loads against staging Render.
 
 Vercel treats any non-production branch as "Preview." We piggyback on that
 mechanism so the `staging` branch auto-deploys to a stable Preview URL.
