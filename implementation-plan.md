@@ -9,13 +9,14 @@
 - **Phase 2 complete** — FastAPI on Render, Postgres (Supabase), public API, inventory + forms wired
 - **Phase 3 complete** — Google OAuth admin, inventory/customer CRUD, bulk Excel import, outreach, inventory alerts (Cal.com migration deferred — Calendly still in use)
 - **Phase 4A complete** — Email campaigns (Resend), engagement tracking, social composer (Make/LinkedIn), customer 360 timeline, segments + templates
-- **Phase 4B not started** — AI/analytics platform: engagement scoring, live visitors, AI customer briefings, competitive intelligence, sentiment analysis, GraphQL layer
+- **Phase 4.5 complete** — Design system governance ([`Design.md`](Design.md)); shared UI primitives, public page refactors, admin headers via `AdminPageHeader`
+- **Phase 4B in progress** — Sprint 1 started: engagement scoring, live visitors dashboard, adblock path rename (`/api/v1/activity`)
 
 Operational items remaining for full production readiness:
 - Domain verification for `titanimagingservice.com` in Resend (waiting on uncle's DNS access)
 - Vercel project transfer from `cyberroa` → `byronroark` account (free; doc in `docs/vercel-transfer.md`)
 - Staging environment provisioning (doc in `docs/deploy-staging.md`)
-- Brave/adblock mitigation Option B (rename event path; planned before Phase 4B Sprint 1; see `docs/analytics-adblock-mitigation.md`)
+- Brave/adblock mitigation Option B — **done** (`POST /api/v1/activity`; see `docs/analytics-adblock-mitigation.md`)
 
 ---
 
@@ -27,12 +28,13 @@ Operational items remaining for full production readiness:
 4. [Phase 2: Backend & Core Features](#phase-2-backend--core-features) — complete
 5. [Phase 3: Admin & Advanced](#phase-3-admin--advanced) — complete
 6. [Phase 4A: Campaigns, Engagement, Social](#phase-4a-campaigns-engagement-social) — complete
-7. [Phase 4B: Analytics Platform & AI](#phase-4b-analytics-platform--ai) — planned
-8. [Database Schema](#database-schema)
-9. [Deployment Architecture](#deployment-architecture)
-10. [Continuing from Another Machine](#continuing-from-another-machine)
-11. [Pre-Implementation Checklist](#pre-implementation-checklist)
-12. [Summary Timeline](#summary-timeline)
+7. [Phase 4.5: Design System & Polish](#phase-45-design-system--polish) — complete
+8. [Phase 4B: Analytics Platform & AI](#phase-4b-analytics-platform--ai) — in progress
+9. [Database Schema](#database-schema)
+10. [Deployment Architecture](#deployment-architecture)
+11. [Continuing from Another Machine](#continuing-from-another-machine)
+12. [Pre-Implementation Checklist](#pre-implementation-checklist)
+13. [Summary Timeline](#summary-timeline)
 
 ---
 
@@ -308,17 +310,50 @@ titan-imaging/
 
 ---
 
-## Phase 4B: Analytics Platform & AI — **planned, not started**
+## Phase 4.5: Design System & Polish — **complete**
+
+**Goal:** Professional, uniform public site and governed admin headers; one place to adjust brand tokens and patterns ([`Design.md`](Design.md)).
+**Estimated duration:** ~1–1.5 weeks
+**Priority:** Complete before Phase 4B (design-first).
+
+### 4.5.1 Design governance
+- [x] Author [`Design.md`](Design.md) at repo root (tokens, typography, layout, forms, admin, a11y, change procedure)
+- [x] Link from [`README.md`](README.md) and this plan
+
+### 4.5.2 Shared primitives (`frontend/components/ui/`)
+- [x] `Eyebrow`, `PageHero`, `Container`, `Section`, `SectionHeading`
+- [x] `Button` / `LinkButton` (primary, secondary, accent)
+- [x] `AdminPageHeader`
+- [x] `frontend/lib/cn.ts` class-name helper
+
+### 4.5.3 Public page refactor (use primitives; visual parity first)
+- [x] Home, Inventory / `InventoryBrowser`
+- [x] Contact, Sell + forms
+- [x] About, Services, Book
+- [x] Testimonials, Insights
+
+### 4.5.4 Admin consistency
+- [x] Migrate admin page headers to `AdminPageHeader`
+- [x] Document admin-only patterns in `Design.md`
+
+### 4.5.5 Deliverables
+- [x] `Design.md` kept in sync with `tailwind.config.ts`
+- [x] Public marketing pages share hero, section, and button patterns
+- [x] Global retheme achievable via tokens + `components/ui/*` without page-by-page edits
+
+---
+
+## Phase 4B: Analytics Platform & AI — **in progress**
 
 **Goal:** Give Titan Imaging a competitive edge with AI-driven customer intelligence, live engagement scoring, sentiment analysis, and a queryable analytics surface.
 **Estimated duration:** 4–6 weeks across sprints
 
 ### Sprint 1 — Engagement scoring + live visitors dashboard (~1 week)
 **Why first:** highest ROI; directly addresses "make the sale before the customer leaves."
-- [ ] Server-side scoring per `BrowserSession` and `Customer`: weighted sum of event types with recency decay
-- [ ] `GET /admin/sessions/live` endpoint returning active sessions in last N minutes
-- [ ] `/admin/live` page: real-time table of currently-active visitors, what they're searching, parts viewed, score trending; auto-refresh every 10 sec
-- [ ] "Hot leads" list — identified customers above score threshold in last 24h, sortable
+- [x] Server-side scoring per `BrowserSession` and `Customer`: weighted sum of event types with recency decay (`backend/app/engagement.py`)
+- [x] `GET /admin/sessions/live` endpoint returning active sessions in last N minutes
+- [x] `/admin/live` page: real-time table of currently-active visitors, what they're searching, parts viewed, score trending; auto-refresh every 10 sec
+- [x] "Hot leads" list — identified customers above score threshold in last 24h, sortable
 - [ ] Optional: Slack or email notification to uncle when a known customer crosses threshold
 
 ### Sprint 2 — AI customer briefings + customer 360 enrichment (~1 week)
@@ -344,7 +379,7 @@ titan-imaging/
 - [ ] Flag high-urgency inquiries for same-day follow-up
 
 ### Prerequisite (before Sprint 1)
-- [ ] Brave/adblock mitigation Option B: rename `/api/v1/events` → e.g. `/api/v1/activity` to defeat path-based blocklist matches (see `docs/analytics-adblock-mitigation.md`)
+- [x] Brave/adblock mitigation Option B: rename `/api/v1/events` → `/api/v1/activity` (see `docs/analytics-adblock-mitigation.md`)
 - [ ] Eventually upgrade to Option C (first-party Vercel proxy) when traffic warrants
 
 ---
@@ -488,6 +523,7 @@ Frontend at http://localhost:3000, backend at http://localhost:8080. Make sure `
 ### 6. Read these in order before making changes
 
 - This file — overall plan and current state
+- [`Design.md`](Design.md) — UI tokens and patterns before editing `frontend/` styles
 - `README.md` — repo overview + quickstart
 - `docs/production-cutover.md` — what's left to fully launch
 - `docs/deploy-staging.md` — when you eventually want a non-prod environment
@@ -543,6 +579,7 @@ python -c "from app.main import app; print('ok')"
 | **2. Backend & Core Features** | 2–3 weeks | **Done** — FastAPI on Render, Postgres, parts API, contact/sell |
 | **3. Admin & Advanced** | 3–4 weeks | **Done** — Google OAuth, inventory + customer CRUD, bulk import, alerts |
 | **4A. Campaigns, Engagement, Social** | ~1 week | **Done** — Resend campaigns, customer 360, engagement tracking, Make/LinkedIn |
-| **4B. Analytics Platform & AI** | 4–6 weeks | **Planned** — engagement scoring, live visitors, AI briefings, competitive intel, sentiment, GraphQL |
+| **4.5. Design System & Polish** | ~1–1.5 weeks | **Complete** — `Design.md`, UI primitives, uniform public + admin pages |
+| **4B. Analytics Platform & AI** | 4–6 weeks | **In progress** — Sprint 1 live visitors + scoring; AI briefings, competitive intel, sentiment, GraphQL remain |
 
 **Total to date:** ~7-10 weeks. Phase 4B adds another ~4-6 weeks for full delivery.

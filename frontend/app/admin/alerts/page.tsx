@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from "@/lib/api-admin";
 import { createClient } from "@/lib/supabase/client";
@@ -43,15 +44,11 @@ export default function AdminAlertsPage() {
 
   return (
     <>
-      <section className="text-center">
-        <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-          Notifications
-        </p>
-        <h1 className="mt-3 text-3xl font-bold md:text-4xl">Inventory alerts</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Customers who asked to be emailed when a part becomes available.
-        </p>
-      </section>
+      <AdminPageHeader
+        eyebrow="Notifications"
+        title="Inventory alerts"
+        description="Customers who asked to be emailed when a part becomes available."
+      />
 
       {error ? (
         <p className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

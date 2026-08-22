@@ -1,8 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { Button } from "@/components/ui";
 import { apiFetch } from "@/lib/api";
 import { identify, track } from "@/lib/track";
+
+const inputClassName =
+  "w-full rounded-lg border border-white/10 bg-background-card px-4 py-3.5 text-white outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2";
 
 export function SellForm() {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
@@ -56,7 +60,7 @@ export function SellForm() {
           type="text"
           required
           placeholder="Your name"
-          className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3.5 text-white outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2"
+          className={inputClassName}
         />
       </div>
       <div>
@@ -72,7 +76,7 @@ export function SellForm() {
           type="email"
           required
           placeholder="you@example.com"
-          className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3.5 text-white outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2"
+          className={inputClassName}
         />
       </div>
       <div>
@@ -87,7 +91,7 @@ export function SellForm() {
           name="company"
           type="text"
           placeholder="Facility or company name"
-          className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3.5 text-white outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2"
+          className={inputClassName}
         />
       </div>
       <div>
@@ -102,7 +106,7 @@ export function SellForm() {
           name="phone"
           type="tel"
           placeholder="(555) 555-5555"
-          className="w-full rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3.5 text-white outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2"
+          className={inputClassName}
         />
       </div>
       <div>
@@ -117,7 +121,7 @@ export function SellForm() {
           name="equipment"
           rows={4}
           placeholder="Equipment type, model, condition, quantity…"
-          className="min-h-[100px] w-full resize-y rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3.5 text-white outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2"
+          className={`min-h-[100px] resize-y ${inputClassName}`}
         />
       </div>
       <div>
@@ -132,16 +136,12 @@ export function SellForm() {
           name="message"
           rows={3}
           placeholder="Anything else we should know?"
-          className="w-full resize-y rounded-lg border border-white/10 bg-[#0d0d0d] px-4 py-3.5 text-white outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2"
+          className={`resize-y ${inputClassName}`}
         />
       </div>
-      <button
-        type="submit"
-        disabled={status === "sending"}
-        className="w-full rounded-lg bg-accent-titanium py-4 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70"
-      >
+      <Button type="submit" variant="accent" fullWidth disabled={status === "sending"}>
         {status === "sending" ? "Submitting…" : "Submit for Quote"}
-      </button>
+      </Button>
       {status === "sent" ? (
         <p className="rounded-lg border border-accent-titanium/20 bg-accent-titanium/10 px-4 py-3 text-center text-sm text-accent-titanium">
           Thanks — we received your request. Call{" "}

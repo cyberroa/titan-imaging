@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiUploadWithAuth } from "@/lib/api-admin";
 import { createClient } from "@/lib/supabase/client";
@@ -51,16 +52,17 @@ export default function AdminImportPage() {
 
   return (
     <>
-      <section className="text-center">
-        <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-          Bulk data
-        </p>
-        <h1 className="mt-3 text-3xl font-bold md:text-4xl">Import inventory</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Upload the CSV or Excel template from <code className="text-accent-titanium">inventory-templates/</code>.
-          Run a dry run first to validate rows.
-        </p>
-      </section>
+      <AdminPageHeader
+        eyebrow="Bulk data"
+        title="Import inventory"
+        description={
+          <p>
+            Upload the CSV or Excel template from{" "}
+            <code className="text-accent-titanium">inventory-templates/</code>. Run a dry run first
+            to validate rows.
+          </p>
+        }
+      />
 
       <form
         onSubmit={(e) => void upload(e)}

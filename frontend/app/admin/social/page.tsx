@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from "@/lib/api-admin";
 import { createClient } from "@/lib/supabase/client";
@@ -98,16 +99,16 @@ export default function AdminSocialPage() {
 
   return (
     <>
-      <section className="text-center">
-        <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-          Social
-        </p>
-        <h1 className="mt-3 text-3xl font-bold md:text-4xl">LinkedIn composer</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Posts are sent to a Make scenario that publishes to Titan Imaging&rsquo;s LinkedIn Page.
-          See <code>docs/phase4a-make-setup.md</code> to configure the webhook.
-        </p>
-      </section>
+      <AdminPageHeader
+        eyebrow="Social"
+        title="LinkedIn composer"
+        description={
+          <>
+            Posts are sent to a Make scenario that publishes to Titan Imaging&apos;s LinkedIn Page.
+            See <code>docs/phase4a-make-setup.md</code> to configure the webhook.
+          </>
+        }
+      />
 
       <div className="mt-10 rounded-xl border border-white/10 bg-background-card p-6">
         <h2 className="text-lg font-semibold">New post</h2>

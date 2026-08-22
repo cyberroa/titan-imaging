@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { Eyebrow } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/env-public";
 import { useSearchParams } from "next/navigation";
@@ -36,9 +37,7 @@ function LoginInner() {
           </p>
         </div>
       ) : null}
-      <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-        Titan Imaging
-      </p>
+      <Eyebrow>Titan Imaging</Eyebrow>
       <h1 className="mt-3 text-3xl font-bold">Admin sign in</h1>
       <p className="mt-3 max-w-md text-text-secondary">
         Use your Google account. Access is limited to approved emails.

@@ -80,7 +80,7 @@ export async function track(
     payload: { ...payload, referrer },
   });
 
-  const endpoint = `${getApiBaseUrl()}/api/v1/events`;
+  const endpoint = `${getApiBaseUrl()}/api/v1/activity`;
   try {
     if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
       const blob = new Blob([body], { type: "application/json" });

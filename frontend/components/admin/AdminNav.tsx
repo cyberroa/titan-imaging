@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 const LINKS = [
+  { href: "/admin/live", label: "Live" },
   { href: "/admin/parts", label: "Parts" },
   { href: "/admin/categories", label: "Categories" },
   { href: "/admin/import", label: "Import" },

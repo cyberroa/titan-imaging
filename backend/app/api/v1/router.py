@@ -6,6 +6,7 @@ from app.api.v1.routes import (
     admin,
     admin_campaigns,
     admin_customers,
+    admin_sessions,
     admin_social,
     admin_templates,
     categories,
@@ -25,11 +26,12 @@ api_router.include_router(contact.router, tags=["contact"])
 api_router.include_router(sell.router, tags=["sell"])
 api_router.include_router(admin.router, tags=["admin"])
 api_router.include_router(admin_customers.router, tags=["admin-customers"])
+api_router.include_router(admin_sessions.router, tags=["admin-sessions"])
 api_router.include_router(admin_templates.router, tags=["admin-templates"])
 api_router.include_router(admin_campaigns.router, tags=["admin-campaigns"])
 api_router.include_router(admin_social.router, tags=["admin-social"])
 api_router.include_router(inventory_alerts_public.router, tags=["inventory-alerts"])
-api_router.include_router(events_public.router, tags=["events"])
+api_router.include_router(events_public.router, tags=["activity"])
 api_router.include_router(unsubscribe_public.router, tags=["unsubscribe"])
 api_router.include_router(webhooks.router, tags=["webhooks"])
 

@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Container, PageHero } from "@/components/ui";
 import { apiFetch, getApiBaseUrl, withRetry, type ApiCategory, type ApiPart } from "@/lib/api";
 import { IMAGES } from "@/lib/images";
 import { track } from "@/lib/track";
@@ -183,25 +183,13 @@ export function InventoryBrowser({
 
   return (
     <>
-      <section className="relative flex min-h-[380px] flex-col items-center justify-end overflow-hidden px-6 pb-10 pt-4 text-center md:min-h-[420px] md:pb-14">
-        <div className="pointer-events-none absolute inset-0 z-0">
-          <Image
-            src={IMAGES.inventoryBanner}
-            alt=""
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/70 to-black" />
-        </div>
-
-        <div className="relative z-10 flex w-full max-w-3xl flex-col items-center">
-          <p className="font-display text-[11px] uppercase tracking-[0.2em] text-accent-titanium">
-            Live Inventory
-          </p>
-          <h1 className="mt-2 text-3xl font-bold md:text-4xl">We Have What You Need</h1>
-          <p className="mx-auto mt-3 max-w-lg text-text-secondary">
+      <PageHero
+        size="compact"
+        image={IMAGES.inventoryBanner}
+        eyebrow="Live Inventory"
+        title="We Have What You Need"
+        subtitle={
+          <>
             Search by part number or name. Call{" "}
             <a
               href="tel:9047426265"
@@ -210,45 +198,46 @@ export function InventoryBrowser({
               (904) 742-6265
             </a>{" "}
             to speak with someone directly.
-          </p>
-
-          <div className="relative z-20 mt-8 w-full max-w-xl">
-            <div className="flex overflow-hidden rounded-lg border border-white/10 bg-background-raised/95 shadow-lg shadow-black/40">
-              <input
-                className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-base text-white outline-none placeholder:text-text-muted"
-                placeholder="Search part number or name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                autoComplete="off"
-              />
+          </>
+        }
+        contentClassName="flex w-full max-w-3xl flex-col items-center"
+      >
+        <div className="relative z-20 mt-8 w-full max-w-xl">
+          <div className="flex overflow-hidden rounded-lg border border-white/10 bg-background-raised/95 shadow-lg shadow-black/40">
+            <input
+              className="min-w-0 flex-1 bg-transparent px-4 py-3.5 text-base text-white outline-none placeholder:text-text-muted"
+              placeholder="Search part number or name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              className="bg-accent-titanium px-6 py-3.5 text-sm font-semibold text-black transition hover:brightness-110"
+            >
+              Search
+            </button>
+          </div>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {pills.map(({ key, label }) => (
               <button
+                key={key}
                 type="button"
-                className="bg-accent-titanium px-6 py-3.5 text-sm font-semibold text-black transition hover:brightness-110"
+                onClick={() => setFilter(key)}
+                className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition ${
+                  filter === key
+                    ? "border-accent-titanium bg-accent-titanium text-black"
+                    : "border-white/15 text-text-muted hover:border-white/25 hover:text-text-secondary"
+                }`}
               >
-                Search
+                {label}
               </button>
-            </div>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              {pills.map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFilter(key)}
-                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold transition ${
-                    filter === key
-                      ? "border-accent-titanium bg-accent-titanium text-black"
-                      : "border-white/15 text-text-muted hover:border-white/25 hover:text-text-secondary"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
-      </section>
+      </PageHero>
 
-      <div className="mx-auto mt-12 max-w-5xl px-6 pb-24">
+      <Container maxWidth="wide" className="mt-12 pb-24">
         {unsubscribedBanner ? (
           <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm text-emerald-100">
             You have been unsubscribed from inventory alerts for that part.
@@ -279,7 +268,7 @@ export function InventoryBrowser({
             {Array.from({ length: 9 }).map((_, i) => (
               <div
                 key={i}
-                className="h-[128px] animate-pulse rounded-xl border border-white/10 bg-[#0d0d0d]"
+                className="h-[128px] animate-pulse rounded-xl border border-white/10 bg-background-card"
               />
             ))}
           </div>
@@ -300,7 +289,7 @@ export function InventoryBrowser({
               return (
                 <div
                   key={p.id}
-                  className="rounded-xl border border-white/10 bg-[#0d0d0d] p-6 transition hover:border-white/20"
+                  className="rounded-xl border border-white/10 bg-background-card p-6 transition hover:border-white/20"
                   onClick={() =>
                     void track("part_view", {
                       part_number: p.partNumber,
@@ -333,7 +322,7 @@ export function InventoryBrowser({
             })}
           </div>
         )}
-      </div>
+      </Container>
     </>
   );
 }

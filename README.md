@@ -28,8 +28,16 @@ inventory-templates/
   inventory_import_template.csv
   customer_import_template.csv
   campaigns/              Starter email templates (Markdown)
+Design.md                 Public/admin UI design system and governance
 implementation-plan.md  Phase-by-phase plan
 ```
+
+## Design system
+
+UI tokens, typography, layout rules, and component conventions are documented in
+[`Design.md`](Design.md). Read it before changing styles in `frontend/`. Shared UI
+primitives under `frontend/components/ui/` are introduced in Phase 4.5 (see
+[`implementation-plan.md`](implementation-plan.md)).
 
 ## Local dev quickstart
 
