@@ -12,9 +12,9 @@ Estimated time: **~45 minutes** (mostly DNS/OAuth propagation waits).
 |------|--------|
 | A — `staging` Git branch from `main` | **Done** (`origin/staging`) |
 | B — Supabase project `titan-imaging-staging` | **Done** |
-| C — Supabase Auth + Google OAuth | **Your action** (below) |
-| D — Migrations on staging DB | **Your action** (after C) |
-| E — Render `titan-imaging-api-staging` | After Step D |
+| C — Supabase Auth + Google OAuth | **Done** |
+| D — Migrations on staging DB | **Done** |
+| E — Render `titan-imaging-api-staging` | **Your action** (below) |
 | F — Vercel Preview env + domain alias | After Step E |
 | G–J — Smoke tests, Resend, Make | After Step F |
 
@@ -99,7 +99,7 @@ git push -u origin staging
 
 ## Step C — Supabase Auth config (staging)
 
-**Status: manual — do this now before migrations.**
+**Status: done.**
 
 1. Auth → **URL Configuration**:
    - Site URL: leave blank for now, fill in after Step F.
@@ -124,7 +124,7 @@ git push -u origin staging
 
 ## Step D — Run migrations against staging DB
 
-**Status: manual — run locally once Step C is done.**
+**Status: done.**
 
 From `backend/` with the venv activated:
 
@@ -152,15 +152,18 @@ Verify in staging Supabase → **Table Editor** that these tables exist:
 
 ## Step E — Staging Render service
 
+**Status: manual — do this now.**
+
 1. Render → **New → Web Service**.
-2. Repository: same GitHub repo.
+2. Repository: same GitHub repo (`cyberroa/titan-imaging`).
 3. **Branch: `staging`** (critical — not `main`).
 4. Root directory: `backend`.
-5. Build command + start command: copy from the production service
-   (typically `pip install -r requirements.txt` and
-   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`).
-6. Name: `titan-imaging-api-staging`.
-7. Plan: Free tier is sufficient.
+5. Build command: `pip install -r requirements.txt`
+6. Start command: `bash scripts/render_start.sh`  
+   (same as prod — runs migrations + seed, then uvicorn)
+7. Name: `titan-imaging-api-staging`
+8. Plan: Free tier is sufficient.
+9. Health check path: `/health`
 
 ### Environment variables
 
