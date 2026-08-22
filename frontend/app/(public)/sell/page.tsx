@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { SellForm } from "@/components/forms/SellForm";
+import { Container, Eyebrow, PageHero } from "@/components/ui";
 import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
@@ -22,47 +22,31 @@ export const metadata: Metadata = {
 export default function SellPage() {
   return (
     <>
-      <section className="relative flex min-h-[42vh] flex-col items-center justify-center overflow-hidden px-6 pb-16 pt-4 text-center">
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={IMAGES.sellToUs}
-            alt=""
-            fill
-            className="object-cover"
-            priority
-            sizes="100vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/75 to-black" />
-        </div>
-        <div className="relative z-10 max-w-2xl">
-          <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-            Sell Your Equipment
-          </p>
-          <h1 className="mt-3 text-3xl font-bold md:text-5xl">Sell With Confidence</h1>
-          <p className="mt-4 text-text-secondary">
-            Turn your PET/CT equipment into a fair offer. We buy systems, parts, and components—and
-            make the process simple.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image={IMAGES.sellToUs}
+        eyebrow="Sell Your Equipment"
+        title="Sell With Confidence"
+        subtitle="Turn your PET/CT equipment into a fair offer. We buy systems, parts, and components—and make the process simple."
+        contentClassName="max-w-2xl"
+      />
 
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 pb-24 lg:grid-cols-2 lg:items-start">
-        <div className="rounded-xl border border-white/10 bg-[#0d0d0d]/95 p-8">
+      <Container className="grid gap-10 pb-24 lg:grid-cols-2 lg:items-start">
+        <div className="rounded-xl border border-white/10 bg-background-card/95 p-8">
           <div className="mb-8">
-            <h2 className="font-display text-sm uppercase tracking-[0.15em] text-accent-titanium">
+            <Eyebrow as="span" className="text-sm tracking-[0.15em]">
               Submit Your Equipment
-            </h2>
+            </Eyebrow>
             <p className="mt-1 text-sm text-text-muted">
-              Fill out the form and we&apos;ll follow up with a quote (API in Phase 2).
+              Fill out the form and we&apos;ll follow up with a quote.
             </p>
           </div>
           <SellForm />
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-[#0d0d0d]/95 p-8">
-          <h2 className="font-display text-sm uppercase tracking-[0.15em] text-accent-titanium">
+        <div className="rounded-xl border border-white/10 bg-background-card/95 p-8">
+          <Eyebrow as="span" className="text-sm tracking-[0.15em]">
             How It Works
-          </h2>
+          </Eyebrow>
           <p className="mt-4 text-sm leading-relaxed text-text-secondary">
             Selling your equipment to Titan Imaging is simple and secure. Submit your details,
             receive a fair quote, and we guide you through every step for a smooth, transparent
@@ -124,7 +108,7 @@ export default function SellPage() {
             .
           </p>
         </div>
-      </div>
+      </Container>
     </>
   );
 }

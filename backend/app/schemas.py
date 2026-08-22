@@ -320,6 +320,33 @@ class EventOut(BaseModel):
     occurred_at: datetime
 
 
+class LiveSessionCustomerOut(BaseModel):
+    id: str
+    email: str
+    name: str | None = None
+    company: str | None = None
+
+
+class LiveSessionOut(BaseModel):
+    id: str
+    first_seen_at: datetime
+    last_seen_at: datetime
+    score: float
+    current_url: str | None = None
+    latest_search: str | None = None
+    parts_viewed: list[str] = Field(default_factory=list)
+    customer: LiveSessionCustomerOut | None = None
+
+
+class HotLeadOut(BaseModel):
+    customer_id: str
+    email: str
+    name: str | None = None
+    company: str | None = None
+    score: float
+    last_seen_at: datetime | None = None
+
+
 class SocialPostCreate(BaseModel):
     body: str = Field(min_length=1, max_length=6000)
     link_url: str | None = Field(default=None, max_length=2000)

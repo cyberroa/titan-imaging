@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth, apiUploadWithAuth } from "@/lib/api-admin";
 import { createClient } from "@/lib/supabase/client";
@@ -150,16 +151,11 @@ export default function AdminCustomersPage() {
 
   return (
     <>
-      <section className="text-center">
-        <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-          CRM
-        </p>
-        <h1 className="mt-3 text-3xl font-bold md:text-4xl">Customers</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Ingest contacts from Titan Imaging&rsquo;s spreadsheets, manage tags and consent, and
-          view a per-customer timeline of email and site activity.
-        </p>
-      </section>
+      <AdminPageHeader
+        eyebrow="CRM"
+        title="Customers"
+        description="Ingest contacts from Titan Imaging's spreadsheets, manage tags and consent, and view a per-customer timeline of email and site activity."
+      />
 
       <div className="mt-10 grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-white/10 bg-background-card p-6">

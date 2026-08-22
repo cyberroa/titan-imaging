@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
+import {
+  Container,
+  Eyebrow,
+  LinkButton,
+  PageHero,
+  Section,
+  SectionHeading,
+} from "@/components/ui";
 import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
@@ -49,31 +56,17 @@ const stats = [
 export default function AboutPage() {
   return (
     <>
-      <section className="relative flex min-h-[45vh] flex-col items-center justify-center overflow-hidden px-6 pb-12 pt-4 text-center">
-        <div className="absolute inset-0 z-0">
-          <Image src={IMAGES.aboutUs} alt="" fill className="object-cover" priority sizes="100vw" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/75 to-black" />
-        </div>
-        <div className="relative z-10 max-w-3xl">
-          <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-            About Titan Imaging Service
-          </p>
-          <h1 className="mt-3 text-3xl font-bold md:text-5xl">
-            Quality &amp; Expertise You Deserve
-          </h1>
-          <p className="mt-4 text-lg text-text-secondary">
-            Three decades of hands-on PET/CT excellence. Trusted by hospitals and imaging centers
-            nationwide.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        image={IMAGES.aboutUs}
+        eyebrow="About Titan Imaging Service"
+        title="Quality & Expertise You Deserve"
+        subtitle="Three decades of hands-on PET/CT excellence. Trusted by hospitals and imaging centers nationwide."
+      />
 
-      <div className="mx-auto max-w-6xl px-6 pb-20">
-        <section className="grid gap-12 py-16 md:grid-cols-2 md:items-center">
+      <Container className="pb-20">
+        <Section spacing="standard" className="grid gap-12 md:grid-cols-2 md:items-center">
           <div>
-            <p className="font-display text-xs uppercase tracking-[0.2em] text-accent-titanium">
-              Who We Are
-            </p>
+            <Eyebrow>Who We Are</Eyebrow>
             <h2 className="mt-2 text-2xl font-bold md:text-3xl">Specialists in PET/CT Solutions</h2>
             <p className="mt-4 text-text-secondary">
               At <strong className="text-white">Titan Imaging Service</strong>, we provide
@@ -108,18 +101,18 @@ export default function AboutPage() {
               className="relative rounded-xl border border-white/10 object-cover"
             />
           </div>
-        </section>
+        </Section>
 
-        <section className="py-12 text-center">
-          <h2 className="text-2xl font-bold md:text-3xl">What Drives Us</h2>
-          <p className="mx-auto mt-2 max-w-lg text-text-muted">
-            The principles that guide every project we undertake
-          </p>
+        <Section spacing="tight">
+          <SectionHeading
+            title="What Drives Us"
+            description="The principles that guide every project we undertake"
+          />
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {values.map((v) => (
               <div
                 key={v.title}
-                className="rounded-xl border border-white/10 bg-[#0a0a0a] p-8 text-left"
+                className="rounded-xl border border-white/10 bg-background-card p-8 text-left"
               >
                 <div className="text-2xl text-accent-titanium" aria-hidden>
                   {v.icon}
@@ -129,9 +122,9 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        <section className="grid grid-cols-2 gap-6 py-12 md:grid-cols-4">
+        <Section spacing="tight" className="grid grid-cols-2 gap-6 md:grid-cols-4">
           {stats.map(([n, l]) => (
             <div key={l} className="text-center">
               <p className="font-display text-3xl font-bold text-accent-titanium md:text-4xl">
@@ -140,13 +133,11 @@ export default function AboutPage() {
               <p className="mt-1 text-sm text-text-muted">{l}</p>
             </div>
           ))}
-        </section>
+        </Section>
 
-        <section className="grid gap-10 py-16 md:grid-cols-2 md:items-center">
+        <Section spacing="standard" className="grid gap-10 md:grid-cols-2 md:items-center">
           <div>
-            <p className="font-display text-xs uppercase tracking-[0.2em] text-accent-titanium">
-              Our Expertise
-            </p>
+            <Eyebrow>Our Expertise</Eyebrow>
             <h2 className="mt-2 text-2xl font-bold md:text-3xl">
               Built on Decades of GE PET/CT Mastery
             </h2>
@@ -160,7 +151,7 @@ export default function AboutPage() {
               standards—now applied directly to your facility.
             </p>
           </div>
-          <div className="rounded-xl border border-white/10 bg-[#0a0a0a] p-10">
+          <div className="rounded-xl border border-white/10 bg-background-card p-10">
             <p className="font-display text-5xl font-bold text-accent-titanium">100+</p>
             <p className="mt-1 text-text-muted">PET/CT System Audits</p>
             <ul className="mt-8 space-y-3 text-sm text-text-secondary">
@@ -177,30 +168,21 @@ export default function AboutPage() {
               ))}
             </ul>
           </div>
-        </section>
+        </Section>
 
-        <section className="rounded-2xl bg-gradient-to-b from-transparent via-[#0a0a0a] to-transparent py-16 text-center">
-          <h2 className="text-2xl font-bold md:text-3xl">Ready to Partner With Us?</h2>
-          <p className="mx-auto mt-3 max-w-lg text-text-muted">
-            Whether you need a system audit, installation support, or refurbished
-            equipment—we&apos;re here to help.
-          </p>
+        <Section spacing="standard" className="rounded-2xl bg-gradient-to-b from-transparent via-background-card to-transparent text-center">
+          <SectionHeading
+            title="Ready to Partner With Us?"
+            description="Whether you need a system audit, installation support, or refurbished equipment—we're here to help."
+          />
           <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link
-              href="/contact"
-              className="rounded-lg bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-accent-titanium"
-            >
-              Get in Touch
-            </Link>
-            <Link
-              href="/services"
-              className="rounded-lg border-2 border-white/25 px-8 py-3 text-sm font-semibold text-white transition hover:border-accent-titanium hover:text-accent-titanium"
-            >
+            <LinkButton href="/contact">Get in Touch</LinkButton>
+            <LinkButton href="/services" variant="secondary" className="border-white/25">
               View Our Services
-            </Link>
+            </LinkButton>
           </div>
-        </section>
-      </div>
+        </Section>
+      </Container>
     </>
   );
 }

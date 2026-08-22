@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from "@/lib/api-admin";
 import { createClient } from "@/lib/supabase/client";
@@ -62,33 +63,33 @@ export default function AdminOutreachPage() {
 
   return (
     <>
-      <section className="text-center">
-        <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-          Email
-        </p>
-        <h1 className="mt-3 text-3xl font-bold md:text-4xl">Outreach</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Send a one-off plain-text message via Resend. Suppressed addresses
-          (global unsubscribes, bounces, complaints) are skipped automatically.
-        </p>
-        <p className="mx-auto mt-3 max-w-2xl text-sm text-text-muted">
-          For anything reusable — newsletters, announcements, drip sequences —
-          use{" "}
-          <Link href="/admin/campaigns" className="text-accent-titanium underline">
-            Campaigns
-          </Link>{" "}
-          with a saved{" "}
-          <Link href="/admin/templates" className="text-accent-titanium underline">
-            template
-          </Link>{" "}
-          and{" "}
-          <Link href="/admin/segments" className="text-accent-titanium underline">
-            segment
-          </Link>
-          . Those sends include open/click tracking and appear on the customer
-          timeline.
-        </p>
-      </section>
+      <AdminPageHeader
+        eyebrow="Email"
+        title="Outreach"
+        description={
+          <>
+            <p>
+              Send a one-off plain-text message via Resend. Suppressed addresses (global
+              unsubscribes, bounces, complaints) are skipped automatically.
+            </p>
+            <p className="text-sm text-text-muted">
+              For anything reusable — newsletters, announcements, drip sequences — use{" "}
+              <Link href="/admin/campaigns" className="text-accent-titanium underline">
+                Campaigns
+              </Link>{" "}
+              with a saved{" "}
+              <Link href="/admin/templates" className="text-accent-titanium underline">
+                template
+              </Link>{" "}
+              and{" "}
+              <Link href="/admin/segments" className="text-accent-titanium underline">
+                segment
+              </Link>
+              . Those sends include open/click tracking and appear on the customer timeline.
+            </p>
+          </>
+        }
+      />
 
       <form
         onSubmit={(e) => void send(e)}

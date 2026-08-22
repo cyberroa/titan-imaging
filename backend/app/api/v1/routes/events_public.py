@@ -29,7 +29,7 @@ def _truncate_payload(p: dict | None) -> dict:
     return out
 
 
-@router.post("/events", response_model=OkOut)
+@router.post("/activity", response_model=OkOut)
 async def ingest_event(
     body: EventIn,
     request: Request,

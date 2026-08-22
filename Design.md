@@ -1,0 +1,269 @@
+# Titan Imaging — Design System
+
+Design governance for the public marketing site (`frontend/app/(public)`) and shared UI patterns used in admin. **Read this before adding or changing Tailwind classes on pages and components.**
+
+Related files:
+
+| File | Role |
+|------|------|
+| [`frontend/tailwind.config.ts`](frontend/tailwind.config.ts) | **Source of truth** for color and font tokens |
+| [`frontend/app/globals.css`](frontend/app/globals.css) | Base styles, scrollbar stability, future `@layer` utilities |
+| [`frontend/app/layout.tsx`](frontend/app/layout.tsx) | Font loading (Inter, Orbitron) |
+| [`frontend/app/(public)/layout.tsx`](frontend/app/(public)/layout.tsx) | Public shell: header offset, footer, widgets |
+
+**Phase 4.5 status:** This document is the contract. Shared primitives (`frontend/components/ui/*`) and page refactors follow in Steps 2–4 of the design polish track (see [`implementation-plan.md`](implementation-plan.md) §Phase 4.5).
+
+---
+
+## Brand intent
+
+- **Audience:** Hospitals, imaging centers, biomedical engineers — professional, trustworthy, technical.
+- **Mood:** Dark industrial / medical imaging; high contrast; restrained accent use.
+- **Voice in UI:** Clear headings, short supporting copy, strong CTAs for contact, inventory, and booking.
+
+---
+
+## Color tokens
+
+Defined in `tailwind.config.ts`. Use **semantic Tailwind classes**, not raw hex, in components and pages.
+
+| Token | Tailwind class | Hex | Usage |
+|-------|----------------|-----|--------|
+| Page background | `bg-background` | `#000000` | Body, full-bleed sections |
+| Raised surfaces | `bg-background-raised` | `#111111` | Header, footer, elevated panels |
+| Cards | `bg-background-card` | `#0a0a0a` | Form panels, error states |
+| Muted blocks | `bg-background-muted` | `#1e1e1e` | Secondary sections, loading skeletons |
+| Primary accent | `text-accent` / `bg-accent` | `#00ffd5` | Sparingly — highlights, links in special contexts |
+| Titanium accent | `text-accent-titanium` / `bg-accent-titanium` | `#a9b4c2` | Eyebrows, form submit, hover on white buttons |
+| Primary text | `text-text-primary` / `text-white` | `#ffffff` | Headings, body on dark |
+| Secondary text | `text-text-secondary` | `#bbbbbb` | Supporting copy, labels |
+| Muted text | `text-text-muted` | `#777777` | Captions, footnotes |
+| Borders | `border-white/5`, `border-white/10` | — | Dividers, inputs, cards |
+
+**Do not** introduce new grays as `#0d0d0d` in new code — prefer `bg-background-card` or add a token in `tailwind.config.ts` if a third surface level is needed.
+
+---
+
+## Typography
+
+Fonts are loaded in root layout:
+
+- **Body:** `font-sans` → Inter (`--font-inter`)
+- **Display / brand:** `font-display` → Orbitron (`--font-orbitron`), weights 500 and 700
+
+### Scale (canonical — target for all pages)
+
+| Role | Classes | Notes |
+|------|---------|--------|
+| **Page title (H1)** | `text-3xl font-bold md:text-5xl` | Hero only; tighten with `leading-tight tracking-tight` on home |
+| **Section title (H2)** | `text-2xl font-bold md:text-3xl` | Content sections below hero |
+| **Section subtitle (H3)** | `text-lg font-semibold` | Cards, accordion titles |
+| **Body** | `text-base text-text-secondary` | Default paragraph |
+| **Small / caption** | `text-sm text-text-muted` or `text-xs` | Footnotes, form hints |
+| **Eyebrow** | `font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium` | Label above H1; **one spec sitewide** (home currently uses `text-xs tracking-[0.35em]` — converge in refactor) |
+
+### Metadata titles
+
+Page `<title>` uses template `%s | TITAN IMAGING` from root layout. Keep route metadata titles short (e.g. `"About Us"`, `"Parts Inventory"`).
+
+---
+
+## Layout
+
+### Public shell
+
+From `(public)/layout.tsx`:
+
+- Fixed header → content wrapper: **`pt-[4.5rem] md:pt-24`**
+- Footer: **`mt-20`**, `border-t border-white/5`, `bg-background-raised`
+
+### Containers (canonical widths)
+
+| Context | Classes |
+|---------|---------|
+| Default content | `mx-auto max-w-6xl px-6` |
+| Narrow prose / forms | `mx-auto max-w-4xl px-6` |
+| Wide grids (stats, cards) | `mx-auto max-w-5xl px-6` |
+| Header inner | `mx-auto max-w-7xl px-6 md:px-12` |
+
+Pick **one** max-width per section type; avoid mixing `max-w-4xl` and `max-w-6xl` on the same page without reason.
+
+### Section vertical rhythm
+
+| Pattern | Classes |
+|---------|---------|
+| Standard section | `py-16 md:py-20` |
+| Hero (inner pages) | `min-h-[45vh]`, `px-6`, `pb-12 pt-4`, centered text |
+| Hero (home) | `min-h-[85vh] md:min-h-[90vh]`, `px-5`, `pb-14 pt-6` |
+| Tight band | `py-12` |
+
+---
+
+## Page templates
+
+### Marketing page (About, Services, Contact, Book, Insights, Testimonials)
+
+1. **Hero** — full-width background image, gradient overlay, eyebrow + H1 + optional subtitle  
+2. **Content section(s)** — `Container` + H2 + body or feature grid  
+3. **Optional CTA band** — dark muted background, headline + primary button  
+4. **Footer** — global via layout  
+
+**Hero gradient (standard):**  
+`bg-gradient-to-b from-black/45 via-black/75 to-black` over `object-cover` image.
+
+**Hero gradient (home / high drama):**  
+`from-black/40 via-black/70 to-black` — slightly lighter top for banner visibility.
+
+### Inventory
+
+Uses `InventoryBrowser` (banner + search + filters + grid). Keep search input styling aligned with form inputs below.
+
+### Admin
+
+Uses `AdminShell` + sidebar nav. Page headers reuse **eyebrow + title + optional actions** pattern (see Admin UI).
+
+---
+
+## Components
+
+### Implemented today (inline patterns — migrate to primitives in Step 2)
+
+These class bundles are duplicated across pages. **Do not copy-paste new instances** — use the primitives once they exist, or match these exact strings:
+
+**Primary link button (marketing)**  
+`rounded-lg bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-accent-titanium`  
+Sizes: `md` = `px-8 py-3`, `lg` = `px-8 py-4` (home CTAs).
+
+**Secondary / outline button**  
+`rounded-lg border-2 border-white px-8 py-4 text-sm font-semibold text-white transition hover:border-accent-titanium hover:text-accent-titanium`
+
+**Form submit (accent fill)**  
+`w-full rounded-lg bg-accent-titanium py-4 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70`
+
+### UI primitives (`frontend/components/ui/`)
+
+Import from `@/components/ui` or individual files:
+
+| Component | Purpose |
+|-----------|---------|
+| `Eyebrow` | Single eyebrow spec |
+| `PageHero` | Image hero with `size="home" \| "standard" \| "compact"` |
+| `Container` | `maxWidth`: `default` \| `narrow` \| `wide` \| `full` |
+| `Section` | `spacing`: `standard` \| `tight` \| `none` |
+| `SectionHeading` | H2 + optional description |
+| `Button` / `LinkButton` | `variant`: `primary` \| `secondary` \| `accent`; `size`: `sm` \| `md` \| `lg` |
+| `AdminPageHeader` | Eyebrow + title + description + optional `actions` slot |
+
+Helper: [`frontend/lib/cn.ts`](frontend/lib/cn.ts) for conditional class names.
+
+---
+
+## Forms
+
+### Labels
+
+`mb-2 block text-xs font-semibold text-text-secondary`  
+Optional hint: `<span className="font-normal text-text-muted">(optional)</span>`
+
+### Text inputs and textareas
+
+```
+w-full rounded-lg border border-white/10 bg-background-card px-4 py-3.5 text-white
+outline-none ring-accent-titanium/20 placeholder:text-text-muted focus:ring-2
+```
+
+Textareas: add `min-h-[120px] resize-y`.
+
+### Success message
+
+`rounded-lg border border-accent-titanium/20 bg-accent-titanium/10 px-4 py-3 text-center text-sm text-accent-titanium`
+
+### Error message
+
+`rounded-lg border border-white/10 bg-background-card px-4 py-3 text-center text-sm text-text-secondary`  
+Use `text-accent-titanium underline` on inline phone/email links.
+
+### Form layout
+
+`space-y-5` between fields. Primary submit full-width on mobile-friendly flows.
+
+---
+
+## Navigation
+
+**Header:** fixed, `z-50`, `border-b border-white/5`, `bg-background-raised`, logo `font-display` uppercase with responsive tracking.
+
+**Active nav link:** match pathname; keep hover states subtle (`text-accent-titanium` or underline — follow `Header.tsx`).
+
+**Mobile:** hamburger toggles full-width nav stack below logo row.
+
+---
+
+## Imagery
+
+Centralize paths in [`frontend/lib/images.ts`](frontend/lib/images.ts). Hero images: `fill` + `object-cover` + `sizes="100vw"` + `priority` on above-the-fold heroes only.
+
+Alt text: decorative hero backgrounds use `alt=""`; content images need descriptive alt.
+
+---
+
+## Admin UI
+
+- Shell: `AdminShell` + top nav (`AdminNav`); dark theme consistent with the public site; data-dense tables and forms.
+- **Page headers:** use `AdminPageHeader` from `@/components/ui` — passes `eyebrow`, `title`, optional `description` (string or ReactNode for links), optional `actions`, and `align` (`center` | `start`).
+- **Login page:** full-screen centered layout; use `Eyebrow` for the brand label (not `AdminPageHeader`, since there is no admin shell).
+- **Tables:** `rounded-xl border border-white/10`, header row `bg-background-raised text-text-muted`, body rows `border-b border-white/5 hover:bg-white/[0.02]`.
+- **Forms:** inputs `rounded-md border border-white/10 bg-black/40 px-3 py-2`; cards `rounded-xl border border-white/10 bg-background-card p-6`.
+- Admin login primary button may reuse marketing **white primary** button classes.
+
+---
+
+## Motion and interaction
+
+- Transitions: `transition` on buttons and links; `hover:brightness-110` on accent fills.
+- Loading: `animate-pulse` skeletons for Suspense fallbacks (see inventory page).
+- Avoid heavy animation; medical B2B tone stays calm.
+
+---
+
+## Accessibility
+
+- **Focus:** `focus:ring-2` with `ring-accent-titanium/20` on inputs; ensure keyboard nav works in mobile menu (`aria-expanded`, `aria-label` on menu button).
+- **Contrast:** White / `#bbbbbb` on `#000000` meets goals for body text; verify new accent combinations.
+- **Forms:** Every input has `htmlFor` / `id`; required fields marked in copy where helpful.
+- **Landmarks:** One `<main>` per page where possible; header/footer semantic elements already in layout components.
+
+---
+
+## How to change the brand globally
+
+1. **Colors / fonts** — Edit [`frontend/tailwind.config.ts`](frontend/tailwind.config.ts) (and `globals.css` CSS variables if used).
+2. **Update this file** — Token table and any class examples that reference old values.
+3. **Update primitives** — Once `components/ui/*` exist, change variants there first.
+4. **Avoid** hunting through every page — refactor pages to primitives so step 3 is sufficient.
+
+### Checklist for a retheme PR
+
+- [ ] `tailwind.config.ts` updated  
+- [ ] `Design.md` token table updated  
+- [ ] `components/ui/*` updated (when present)  
+- [ ] Spot-check: Home, Inventory, Contact, one admin page  
+- [ ] `npm run lint` + visual check on Vercel preview  
+
+---
+
+## Anti-patterns (do not add)
+
+- One-off hex backgrounds (`bg-[#0d0d0d]`) instead of tokens  
+- New eyebrow tracking sizes per page  
+- Inline `style={{}}` for colors that belong in Tailwind config  
+- Different primary button padding on every page  
+- Light-mode sections without an explicit design decision  
+
+---
+
+## References
+
+- Implementation track: [`implementation-plan.md`](implementation-plan.md) §Phase 4.5  
+- Frontend app: [`frontend/`](frontend/)  
+- Production polish / cutover: [`docs/production-cutover.md`](docs/production-cutover.md)

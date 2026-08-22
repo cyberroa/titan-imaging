@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AdminPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from "@/lib/api-admin";
 import { createClient } from "@/lib/supabase/client";
@@ -142,16 +143,11 @@ export default function AdminSegmentsPage() {
 
   return (
     <>
-      <section className="text-center">
-        <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">
-          Email
-        </p>
-        <h1 className="mt-3 text-3xl font-bold md:text-4xl">Segments</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-text-secondary">
-          Reusable filters over the customer list. A campaign picks one segment and sends to
-          everyone it matches.
-        </p>
-      </section>
+      <AdminPageHeader
+        eyebrow="Email"
+        title="Segments"
+        description="Reusable filters over the customer list. A campaign picks one segment and sends to everyone it matches."
+      />
 
       <div className="mt-10 rounded-xl border border-white/10 bg-background-card p-6">
         <h2 className="text-lg font-semibold">

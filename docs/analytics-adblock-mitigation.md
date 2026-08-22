@@ -1,13 +1,12 @@
 # Analytics / ad-blocker mitigation
 
-> **Status:** Option A (accept loss) in effect today. Plan to migrate to
-> Option B before the verified-domain launch, and to Option C once the
+> **Status:** Option B in effect (`POST /api/v1/activity`). Plan Option C once the
 > site has paid advertising traffic or crosses ~1k visitors/day.
 
 ## Context
 
 Our Phase 4A engagement tracking sends anonymous browser events to
-`POST /api/v1/events` on the Render backend. Privacy-oriented browsers
+`POST /api/v1/activity` on the Render backend. Privacy-oriented browsers
 and ad blockers (Brave Shields, uBlock Origin, AdGuard, Pi-hole, NextDNS,
 EasyPrivacy-based extensions, etc.) block this request before it leaves
 the browser because:
