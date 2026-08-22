@@ -11,9 +11,9 @@ Estimated time: **~45 minutes** (mostly DNS/OAuth propagation waits).
 | Step | Status |
 |------|--------|
 | A — `staging` Git branch from `main` | **Done** (`origin/staging`) |
-| B — Supabase project `titanimaging-staging` | **Your action** (see below) |
-| C — Supabase Auth + Google OAuth | After Step B |
-| D — Migrations on staging DB | After Step B |
+| B — Supabase project `titan-imaging-staging` | **Done** |
+| C — Supabase Auth + Google OAuth | **Your action** (below) |
+| D — Migrations on staging DB | **Your action** (after C) |
 | E — Render `titan-imaging-api-staging` | After Step D |
 | F — Vercel Preview env + domain alias | After Step E |
 | G–J — Smoke tests, Resend, Make | After Step F |
@@ -79,13 +79,7 @@ git push -u origin staging
 
 ## Step B — Staging Supabase project
 
-**Status: manual — create in the Supabase dashboard now.**
-
-1. [supabase.com](https://supabase.com) → **New project**.
-   - Name: **`titanimaging-staging`**
-   - Region: **same as production** (check prod project → Settings → General → Region; e.g. `East US (North Virginia)` / `us-east-1`)
-   - DB password: use a **different** password than prod. Store in your
-     password manager.
+**Status: done** — project `titan-imaging-staging` created.
    - Plan: Free tier.
 2. Wait ~2 minutes for provisioning.
 3. Collect these values — you'll paste them into Render and Vercel:
@@ -101,14 +95,11 @@ git push -u origin staging
    transaction pooler (6543) — Alembic migrations require session-mode
    connections.
 
-   **When the project is ready, paste these four values somewhere safe and tell the agent (or continue Step D yourself):**
-
-   - Staging project URL (`https://<ref>.supabase.co`)
-   - Staging `anon` public key
-   - Staging JWT secret
-   - Staging session-pooler `DATABASE_URL`
+   Store these in your password manager — do not commit them to git.
 
 ## Step C — Supabase Auth config (staging)
+
+**Status: manual — do this now before migrations.**
 
 1. Auth → **URL Configuration**:
    - Site URL: leave blank for now, fill in after Step F.
@@ -132,6 +123,8 @@ git push -u origin staging
      ```
 
 ## Step D — Run migrations against staging DB
+
+**Status: manual — run locally once Step C is done.**
 
 From `backend/` with the venv activated:
 
