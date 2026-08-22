@@ -14,8 +14,8 @@ Estimated time: **~45 minutes** (mostly DNS/OAuth propagation waits).
 | B — Supabase project `titan-imaging-staging` | **Done** |
 | C — Supabase Auth + Google OAuth | **Done** |
 | D — Migrations on staging DB | **Done** |
-| E — Render `titan-imaging-api-staging` | **Your action** (below) |
-| F — Vercel Preview env + domain alias | After Step E |
+| E — Render `titan-imaging-api-staging` | **Done** (`https://titan-imaging-api-staging.onrender.com`) |
+| F — Vercel Preview env + domain alias | **Your action** (below) |
 | G–J — Smoke tests, Resend, Make | After Step F |
 
 **Git workflow (replaces `prod` branch):**
@@ -152,69 +152,11 @@ Verify in staging Supabase → **Table Editor** that these tables exist:
 
 ## Step E — Staging Render service
 
-**Status: manual — do this now.**
-
-1. Render → **New → Web Service**.
-2. Repository: same GitHub repo (`cyberroa/titan-imaging`).
-3. **Branch: `staging`** (critical — not `main`).
-4. Root directory: `backend`.
-5. Build command: `pip install -r requirements.txt`
-6. Start command: `bash scripts/render_start.sh`  
-   (same as prod — runs migrations + seed, then uvicorn)
-7. Name: `titan-imaging-api-staging`
-8. Plan: Free tier is sufficient.
-9. Health check path: `/health`
-
-### Environment variables
-
-Values marked **(staging)** must differ from production. Values marked
-**(shared)** can reuse the same value.
-
-```
-# Database + auth (staging)
-DATABASE_URL=<STAGING supabase session-pooler URI>
-SUPABASE_URL=https://<staging-ref>.supabase.co
-SUPABASE_JWT_SECRET=<staging JWT secret>
-
-# Admin access (shared or expanded for testers)
-ADMIN_EMAIL_ALLOWLIST=you@example.com,wife@example.com
-
-# CORS + public URLs (staging)
-CORS_ORIGINS=https://titan-imaging-staging.vercel.app,http://localhost:3000
-PUBLIC_SITE_URL=https://titan-imaging-staging.vercel.app
-PUBLIC_API_URL=https://titan-imaging-api-staging.onrender.com
-
-# Resend (shared key OK; separate webhook)
-RESEND_API_KEY=<same as prod or a second key named "staging">
-EMAIL_FROM=onboarding@resend.dev
-EMAIL_FROM_CUSTOMER=onboarding@resend.dev
-ADMIN_NOTIFY_EMAIL=you@example.com
-RESEND_WEBHOOK_SECRET=<added AFTER creating staging webhook — see Step H>
-
-# CAN-SPAM footer (shared)
-MAILING_ADDRESS=Titan Imaging (STAGING), <real street address>
-
-# Unsubscribe tokens (staging)
-UNSUBSCRIBE_SIGNING_SECRET=<fresh 48-char random; generate with below>
-
-# Social / Make (staging Make scenario — blank until Step I)
-SOCIAL_WEBHOOK_URL=
-SOCIAL_CALLBACK_SECRET=<fresh 48-char random>
-```
-
-Generate the random secrets locally:
-
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(48))"
-```
-
-Run it once per secret (`UNSUBSCRIBE_SIGNING_SECRET` and
-`SOCIAL_CALLBACK_SECRET`). Do **not** reuse production values.
-
-Save → Render auto-deploys the `staging` branch. Takes ~5 minutes. Confirm
-the deploy goes green in **Events** before moving on.
+**Status: done** — `https://titan-imaging-api-staging.onrender.com` (`/health` → `{"ok":true}`).
 
 ## Step F — Staging Vercel environment
+
+**Status: manual — do this now.**
 
 Vercel treats any non-production branch as "Preview." We piggyback on that
 mechanism so the `staging` branch auto-deploys to a stable Preview URL.
@@ -226,12 +168,12 @@ mechanism so the `staging` branch auto-deploys to a stable Preview URL.
    - Production only → production values (leave as-is)
    - Preview only → staging values (below)
 
-   Staging `NEXT_PUBLIC_*` values:
+   Staging `NEXT_PUBLIC_*` values (Preview environment only):
    ```
    NEXT_PUBLIC_API_URL=https://titan-imaging-api-staging.onrender.com
-   NEXT_PUBLIC_SUPABASE_URL=https://<staging-ref>.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=<staging anon key>
-   NEXT_PUBLIC_ADMIN_EMAIL_ALLOWLIST=you@example.com,wife@example.com
+   NEXT_PUBLIC_SUPABASE_URL=https://tqxvwxfsafrhgiakzxso.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<staging anon / publishable key>
+   NEXT_PUBLIC_ADMIN_EMAIL_ALLOWLIST=byron.roark@gmail.com
    NEXT_PUBLIC_SITE_URL=https://titan-imaging-staging.vercel.app
    NEXT_PUBLIC_ENABLE_TRACKING=true
    ```
