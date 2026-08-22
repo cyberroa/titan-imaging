@@ -4,7 +4,10 @@
 export const IMAGES = {
   logo: "/images/logo.png",
   logoFull: "/images/logo-full.png",
-  titanBanner: "/images/ge-omni-petct.png",
+  logoMark: "/images/logo-mark.png",
+  geHealthcare: "/images/ge-healthcare-logo.png?v=8",
+  geMonogram: "/images/ge-monogram.png",
+  titanBanner: "/images/ge-omni-petct.jpg",
   scan: "/images/scan.png",
   aboutUs: "/images/aboutus.png",
   aboutTitant: "/images/abouttitant.png",

@@ -14,6 +14,8 @@ const config: Config = {
         accent: {
           DEFAULT: "#00ffd5",
           titanium: "#a9b4c2",
+          /** Cool scanner-console blue — used on layout prototype */
+          ice: "#6EC9F0",
         },
         text: {
           primary: "#ffffff",
