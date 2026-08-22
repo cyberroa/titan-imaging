@@ -13,7 +13,7 @@ const sizeClasses = {
   },
   home: {
     section:
-      "relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-5 pb-14 pt-6 text-center md:min-h-[90vh]",
+      "relative flex min-h-[85vh] flex-col items-center justify-center overflow-hidden px-5 pb-28 pt-6 text-center md:min-h-[90vh] md:pb-40",
     gradient: "from-black/40 via-black/70 to-black",
     title: "mt-5 text-4xl font-bold leading-tight tracking-tight md:text-5xl lg:text-6xl",
     subtitle: "mx-auto mt-6 max-w-xl text-lg text-text-secondary md:text-xl",
