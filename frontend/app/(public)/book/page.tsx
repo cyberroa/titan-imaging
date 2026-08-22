@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import { CalendlyEmbed } from "@/components/CalendlyEmbed";
 import { Container, Eyebrow, Section } from "@/components/ui";
 import { IMAGES } from "@/lib/images";

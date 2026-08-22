@@ -23,7 +23,9 @@ export function AdminPageHeader({
     <section
       className={cn(
         align === "center" ? "text-center" : "text-left",
-        actions && align === "start" && "flex flex-wrap items-start justify-between gap-4",
+        actions != null && align === "start"
+          ? "flex flex-wrap items-start justify-between gap-4"
+          : undefined,
         className,
       )}
     >
