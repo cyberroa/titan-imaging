@@ -184,6 +184,9 @@ class SegmentOut(BaseModel):
     slug: str
     description: str | None = None
     filter_json: dict[str, Any] = Field(default_factory=dict)
+    ai_managed: bool = False
+    ai_proposal_status: str | None = None
+    ai_rationale: str | None = None
 
 
 class SegmentPreviewOut(BaseModel):
@@ -380,4 +383,29 @@ class TimelineItem(BaseModel):
 class CustomerTimelineOut(BaseModel):
     customer: CustomerOut
     items: list[TimelineItem] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------
+# Phase 4B — AI briefings
+# --------------------------------------------------------------------------
+
+
+class CustomerBriefingOut(BaseModel):
+    customer_id: str
+    content: str
+    model: str
+    timeline_hash: str
+    generated_at: datetime
+    cached: bool = False
+    score: float | None = None
+    disabled: bool = False
+    message: str | None = None
+
+
+class AiStatusOut(BaseModel):
+    enabled: bool
+    configured: bool
+    default_model: str
+    briefing_model: str
+    sentiment_model: str
 

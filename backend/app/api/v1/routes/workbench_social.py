@@ -10,13 +10,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import AdminUser, get_current_admin
+from app.auth import WorkbenchUser, get_current_workbench_user
 from app.db import get_db
 from app.models import SocialPost
 from app.schemas import OkOut, SocialPostCreate, SocialPostOut
 from app.settings import get_settings
 
-router = APIRouter(prefix="/admin/social", dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/workbench/social", dependencies=[Depends(get_current_workbench_user)])
 
 
 def _post_to_out(p: SocialPost) -> SocialPostOut:
@@ -50,7 +50,7 @@ def list_posts(db: Session = Depends(get_db)):
 async def create_post(
     body: SocialPostCreate,
     db: Session = Depends(get_db),
-    admin: AdminUser = Depends(get_current_admin),
+    admin: WorkbenchUser = Depends(get_current_workbench_user),
 ):
     settings = get_settings()
 

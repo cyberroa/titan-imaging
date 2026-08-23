@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import AdminUser, get_current_admin
+from app.auth import WorkbenchUser, get_current_workbench_user
 from app.db import get_db
 from app.email import send_campaign_email
 from app.models import (
@@ -32,7 +32,7 @@ from app.segments import segment_count, segment_customers
 from app.suppression import is_suppressed
 from app.templating import template_to_text_html
 
-router = APIRouter(prefix="/admin/campaigns", dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/workbench/campaigns", dependencies=[Depends(get_current_workbench_user)])
 
 
 SEND_BATCH_SIZE = 25
@@ -84,7 +84,7 @@ def list_campaigns(db: Session = Depends(get_db)):
 def create_campaign(
     body: CampaignCreate,
     db: Session = Depends(get_db),
-    admin: AdminUser = Depends(get_current_admin),
+    admin: WorkbenchUser = Depends(get_current_workbench_user),
 ):
     tpl = db.get(EmailTemplate, body.template_id)
     if not tpl:

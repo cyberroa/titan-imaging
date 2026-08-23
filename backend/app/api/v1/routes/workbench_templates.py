@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_admin
+from app.auth import get_current_workbench_user
 from app.db import get_db
 from app.models import EmailTemplate, Segment
 from app.schemas import (
@@ -24,7 +24,7 @@ from app.schemas import (
 from app.segments import segment_count, segment_customers
 from app.templating import template_to_text_html
 
-router = APIRouter(prefix="/admin", dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/workbench", dependencies=[Depends(get_current_workbench_user)])
 
 
 def _slugify(s: str) -> str:
@@ -158,6 +158,9 @@ def _segment_to_out(s: Segment) -> SegmentOut:
         slug=s.slug,
         description=s.description,
         filter_json=dict(s.filter_json or {}),
+        ai_managed=bool(s.ai_managed),
+        ai_proposal_status=s.ai_proposal_status,
+        ai_rationale=s.ai_rationale,
     )
 
 

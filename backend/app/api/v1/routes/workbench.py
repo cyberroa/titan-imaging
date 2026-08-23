@@ -11,7 +11,7 @@ from openpyxl import load_workbook
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_admin
+from app.auth import get_current_workbench_user
 from app.db import get_db
 from app.inventory_alerts import notify_subscribers_if_became_available
 from app.models import Category, Part
@@ -30,7 +30,7 @@ from app.schemas import (
     PartUpdate,
 )
 
-router = APIRouter(prefix="/admin", dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/workbench", dependencies=[Depends(get_current_workbench_user)])
 
 
 def _slugify(s: str) -> str:

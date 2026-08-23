@@ -6,15 +6,21 @@ import io
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile
 from openpyxl import load_workbook
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_admin
+from app.ai.briefing import generate_customer_briefing
+from app.ai.jobs import enqueue_import_profile_enrichment
+from app.ai.client import AiDisabledError, AiError, ai_is_ready, resolve_model
+from app.ai.opportunities import customer_latest_opportunities
+from app.auth import get_current_workbench_user
 from app.db import get_db
-from app.models import Campaign, CampaignRecipient, Customer, Event
+from app.models import Campaign, CampaignRecipient, ContactSubmission, Customer, Event, SellSubmission
 from app.schemas import (
+    AiStatusOut,
+    CustomerBriefingOut,
     CustomerCreate,
     CustomerImportResult,
     CustomerOut,
@@ -24,8 +30,9 @@ from app.schemas import (
     OkOut,
     TimelineItem,
 )
+from app.settings import get_settings
 
-router = APIRouter(prefix="/admin/customers", dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/workbench/customers", dependencies=[Depends(get_current_workbench_user)])
 
 
 def _customer_to_out(c: Customer) -> CustomerOut:
@@ -70,6 +77,18 @@ def list_customers(
     q = q.order_by(Customer.created_at.desc()).offset(offset).limit(limit)
     rows = db.execute(q).scalars().all()
     return [_customer_to_out(c) for c in rows]
+
+
+@router.get("/ai/status", response_model=AiStatusOut)
+def ai_status():
+    s = get_settings()
+    return AiStatusOut(
+        enabled=bool(s.ai_enabled),
+        configured=ai_is_ready(s),
+        default_model=s.ai_model_default,
+        briefing_model=resolve_model("briefing", s),
+        sentiment_model=resolve_model("sentiment", s),
+    )
 
 
 @router.post("", response_model=CustomerOut)
@@ -213,7 +232,113 @@ def customer_timeline(customer_id: str, db: Session = Depends(get_db)):
             )
 
     items.sort(key=lambda x: x.occurred_at, reverse=True)
+
+    # Contact / sell submissions matched by email (include AI sentiment when present)
+    contacts = (
+        db.execute(
+            select(ContactSubmission)
+            .where(ContactSubmission.email == c.email)
+            .order_by(ContactSubmission.created_at.desc())
+            .limit(50)
+        )
+        .scalars()
+        .all()
+    )
+    for row in contacts:
+        data: dict = {"subject": row.subject, "message": row.message}
+        if row.ai_sentiment:
+            data.update(
+                {
+                    "ai_sentiment": row.ai_sentiment,
+                    "ai_intent": row.ai_intent,
+                    "ai_urgency": row.ai_urgency,
+                    "ai_summary": row.ai_summary,
+                }
+            )
+        items.append(
+            TimelineItem(
+                kind="form:contact",
+                occurred_at=row.created_at,
+                label=f"Contact — {row.subject}",
+                data=data,
+            )
+        )
+
+    sells = (
+        db.execute(
+            select(SellSubmission)
+            .where(SellSubmission.email == c.email)
+            .order_by(SellSubmission.created_at.desc())
+            .limit(50)
+        )
+        .scalars()
+        .all()
+    )
+    for row in sells:
+        data = {"part_details": row.part_details, "message": row.message, "company": row.company}
+        if row.ai_sentiment:
+            data.update(
+                {
+                    "ai_sentiment": row.ai_sentiment,
+                    "ai_intent": row.ai_intent,
+                    "ai_urgency": row.ai_urgency,
+                    "ai_summary": row.ai_summary,
+                }
+            )
+        items.append(
+            TimelineItem(
+                kind="form:sell",
+                occurred_at=row.created_at,
+                label="Sell inquiry",
+                data=data,
+            )
+        )
+
+    items.sort(key=lambda x: x.occurred_at, reverse=True)
     return CustomerTimelineOut(customer=_customer_to_out(c), items=items[:500])
+
+
+@router.get("/{customer_id}/opportunities")
+def customer_opportunities(customer_id: str, db: Session = Depends(get_db)):
+    c = db.get(Customer, customer_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return {"opportunities": customer_latest_opportunities(db, c.id)}
+
+
+@router.get("/{customer_id}/briefing", response_model=CustomerBriefingOut)
+async def get_customer_briefing(customer_id: str, db: Session = Depends(get_db)):
+    c = db.get(Customer, customer_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    try:
+        return await generate_customer_briefing(db, c, force=False)
+    except AiDisabledError as exc:
+        return CustomerBriefingOut(
+            customer_id=str(c.id),
+            content="",
+            model="",
+            timeline_hash="",
+            generated_at=dt.datetime.now(dt.timezone.utc),
+            cached=False,
+            disabled=True,
+            message=str(exc),
+        )
+    except AiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.post("/{customer_id}/briefing/regenerate", response_model=CustomerBriefingOut)
+async def regenerate_customer_briefing(customer_id: str, db: Session = Depends(get_db)):
+    c = db.get(Customer, customer_id)
+    if not c:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    try:
+        return await generate_customer_briefing(db, c, force=True)
+    except AiDisabledError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except AiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 # --------------------------------------------------------------------------
@@ -296,6 +421,7 @@ def _parse_bool(raw: str) -> bool:
 
 @router.post("/import", response_model=CustomerImportResult)
 async def import_customers(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     dry_run: bool = Query(default=False),
     db: Session = Depends(get_db),
@@ -314,6 +440,7 @@ async def import_customers(
 
     result = CustomerImportResult()
     now = dt.datetime.now(dt.timezone.utc)
+    enriched_ids: list[uuid.UUID] = []
     for i, row in enumerate(rows, start=2):
         email_raw = (row.get("email") or "").strip().lower()
         if not email_raw or "@" not in email_raw:
@@ -345,6 +472,7 @@ async def import_customers(
                 existing.consent_at = now
             db.commit()
             result.updated += 1
+            enriched_ids.append(existing.id)
         else:
             c = Customer(
                 id=uuid.uuid4(),
@@ -363,5 +491,9 @@ async def import_customers(
             db.add(c)
             db.commit()
             result.created += 1
+            enriched_ids.append(c.id)
+
+    if not dry_run and enriched_ids:
+        enqueue_import_profile_enrichment(background_tasks, enriched_ids)
 
     return result

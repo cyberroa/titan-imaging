@@ -8,13 +8,13 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.auth import get_current_admin
+from app.auth import get_current_workbench_user
 from app.db import get_db
 from app.engagement import HOT_LEAD_THRESHOLD, compute_score, summarize_session_activity
 from app.models import BrowserSession, Customer, Event
 from app.schemas import HotLeadOut, LiveSessionCustomerOut, LiveSessionOut
 
-router = APIRouter(prefix="/admin/sessions", dependencies=[Depends(get_current_admin)])
+router = APIRouter(prefix="/workbench/sessions", dependencies=[Depends(get_current_workbench_user)])
 
 
 def _customer_summary(c: Customer | None) -> LiveSessionCustomerOut | None:

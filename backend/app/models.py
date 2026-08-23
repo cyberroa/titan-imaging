@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, CITEXT, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -80,6 +80,12 @@ class ContactSubmission(Base):
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    ai_sentiment: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    ai_intent: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    ai_urgency: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    ai_summary: Mapped[str | None] = mapped_column(String(280), nullable=True)
+    ai_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    ai_analyzed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class SellSubmission(Base):
@@ -94,6 +100,12 @@ class SellSubmission(Base):
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+    ai_sentiment: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    ai_intent: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    ai_urgency: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    ai_summary: Mapped[str | None] = mapped_column(String(280), nullable=True)
+    ai_model: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    ai_analyzed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 # --------------------------------------------------------------------------
@@ -129,6 +141,30 @@ class Customer(Base):
 
     events: Mapped[list["Event"]] = relationship(back_populates="customer")
     sessions: Mapped[list["BrowserSession"]] = relationship(back_populates="customer")
+    briefing: Mapped["CustomerBriefing | None"] = relationship(
+        back_populates="customer", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class CustomerBriefing(Base):
+    __tablename__ = "customer_briefings"
+
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("customers.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    model: Mapped[str] = mapped_column(String(120), nullable=False, server_default="")
+    timeline_hash: Mapped[str] = mapped_column(String(64), nullable=False, server_default="")
+    generated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    customer: Mapped["Customer"] = relationship(back_populates="briefing")
 
 
 class Segment(Base):
@@ -141,6 +177,10 @@ class Segment(Base):
     filter_json: Mapped[dict] = mapped_column(
         JSONB, nullable=False, server_default="{}"
     )
+    ai_managed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    ai_proposal_status: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    ai_rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ai_proposed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
@@ -306,6 +346,317 @@ class Event(Base):
     customer: Mapped["Customer | None"] = relationship(back_populates="events")
 
 
+class CustomerEngagementSnapshot(Base):
+    __tablename__ = "customer_engagement_snapshots"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    snapshot_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    score: Mapped[float] = mapped_column(Numeric(10, 1), nullable=False)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class DailyBriefing(Base):
+    __tablename__ = "daily_briefings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    report_date: Mapped[dt.date] = mapped_column(Date, unique=True, nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False, server_default="")
+    markdown_body: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    html_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    chart_payload: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    model: Mapped[str] = mapped_column(String(120), nullable=False, server_default="")
+    emailed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    slacked_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class AiPromptPreset(Base):
+    __tablename__ = "ai_prompt_presets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
+    category: Mapped[str] = mapped_column(String(80), nullable=False, server_default="general")
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    user_prompt_template: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    created_by: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class AiStudioRun(Base):
+    __tablename__ = "ai_studio_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    preset_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ai_prompt_presets.id", ondelete="SET NULL"), nullable=True
+    )
+    model: Mapped[str] = mapped_column(String(120), nullable=False)
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    user_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    context_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    output_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    output_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+    )
+
+
+# --------------------------------------------------------------------------
+# Phase J — opportunities + marketing goals
+# --------------------------------------------------------------------------
+
+
+class OpportunitySnapshot(Base):
+    __tablename__ = "opportunity_snapshots"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    opportunity_type: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    score: Mapped[float] = mapped_column(Numeric(10, 1), nullable=False, server_default="0")
+    reasons: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
+    as_of_date: Mapped[dt.date] = mapped_column(Date, nullable=False, index=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class MarketingGoal(Base):
+    __tablename__ = "marketing_goals"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    opportunity_types: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default="{}"
+    )
+    channel: Mapped[str] = mapped_column(String(40), nullable=False, server_default="email")
+    segment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("segments.id", ondelete="SET NULL"), nullable=True
+    )
+    pending_segment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("segments.id", ondelete="SET NULL"), nullable=True
+    )
+    auto_refresh: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    draft_on_threshold: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    segment_link_status: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default="none"
+    )
+    last_member_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_refreshed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_draft_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+# --------------------------------------------------------------------------
+# Phase I — staff payroll
+# --------------------------------------------------------------------------
+
+
+class WorkbenchStaff(Base):
+    __tablename__ = "workbench_staff"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False, index=True)
+    display_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    role: Mapped[str] = mapped_column(String(24), nullable=False, server_default="admin")
+    workbench_tier: Mapped[str] = mapped_column(String(24), nullable=False, server_default="staff")
+    capabilities: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    title: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class PayPolicy(Base):
+    __tablename__ = "pay_policies"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    is_default: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    commission_rate_bps: Mapped[int] = mapped_column(Integer, nullable=False, server_default="500")
+    commission_applies_to: Mapped[str] = mapped_column(
+        String(24), nullable=False, server_default="closer"
+    )
+    hourly_rate_cents: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, server_default="USD")
+    terms_markdown: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    effective_from: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    effective_to: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class StaffPayAssignment(Base):
+    __tablename__ = "staff_pay_assignments"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    policy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pay_policies.id", ondelete="RESTRICT"), nullable=False
+    )
+    policy_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    assigned_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="SET NULL"), nullable=True
+    )
+    assigned_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    accepted_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="pending_acceptance")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class SaleConversion(Base):
+    __tablename__ = "sale_conversions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    source_type: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    source_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, server_default="USD")
+    closed_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="won")
+    lead_owner_staff_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="SET NULL"), nullable=True
+    )
+    closer_staff_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="SET NULL"), nullable=True
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_by_staff_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class TimeEntry(Base):
+    __tablename__ = "time_entries"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    work_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
+    hours: Mapped[float] = mapped_column(Numeric(6, 2), nullable=False)
+    category: Mapped[str] = mapped_column(String(40), nullable=False, server_default="other")
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class SupportActivity(Base):
+    __tablename__ = "support_activity"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True
+    )
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    occurred_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ServiceJob(Base):
+    __tablename__ = "service_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    customer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="RESTRICT"), nullable=False, index=True
+    )
+    job_type: Mapped[str] = mapped_column(String(40), nullable=False, server_default="repair")
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    hours: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
+    amount_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    part_number: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    site_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scheduled_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    audit_report: Mapped[str | None] = mapped_column(Text, nullable=True)
+    follow_up_needed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    completed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="completed")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class EarningsLedger(Base):
+    __tablename__ = "earnings_ledger"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    source_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    source_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    policy_assignment_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("staff_pay_assignments.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    earned_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="owed")
+    paid_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    paid_by_staff_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="SET NULL"), nullable=True
+    )
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class SocialPost(Base):
     __tablename__ = "social_posts"
 
@@ -328,3 +679,51 @@ class SocialPost(Base):
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
+
+
+class CompetitorSource(Base):
+    __tablename__ = "competitor_sources"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    slug: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+    base_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    scrape_urls: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    last_scraped_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    listings: Mapped[list["CompetitorListing"]] = relationship(back_populates="source")
+
+
+class CompetitorListing(Base):
+    __tablename__ = "competitor_listings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("competitor_sources.id", ondelete="CASCADE"), nullable=False
+    )
+    external_sku: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    part_number: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    title: Mapped[str] = mapped_column(String(500), nullable=False, server_default="")
+    price_cents: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    currency: Mapped[str] = mapped_column(String(3), nullable=False, server_default="USD")
+    availability: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    listing_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    scraped_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    source: Mapped["CompetitorSource"] = relationship(back_populates="listings")

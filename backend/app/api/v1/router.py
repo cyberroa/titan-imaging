@@ -3,12 +3,16 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1.routes import (
-    admin,
-    admin_campaigns,
-    admin_customers,
-    admin_sessions,
-    admin_social,
-    admin_templates,
+    workbench,
+    workbench_ai,
+    workbench_campaigns,
+    workbench_competitors,
+    workbench_customers,
+    workbench_goals,
+    workbench_payroll,
+    workbench_sessions,
+    workbench_social,
+    workbench_templates,
     categories,
     contact,
     events_public,
@@ -24,12 +28,16 @@ api_router.include_router(parts.router, tags=["parts"])
 api_router.include_router(categories.router, tags=["categories"])
 api_router.include_router(contact.router, tags=["contact"])
 api_router.include_router(sell.router, tags=["sell"])
-api_router.include_router(admin.router, tags=["admin"])
-api_router.include_router(admin_customers.router, tags=["admin-customers"])
-api_router.include_router(admin_sessions.router, tags=["admin-sessions"])
-api_router.include_router(admin_templates.router, tags=["admin-templates"])
-api_router.include_router(admin_campaigns.router, tags=["admin-campaigns"])
-api_router.include_router(admin_social.router, tags=["admin-social"])
+api_router.include_router(workbench.router, tags=["workbench"])
+api_router.include_router(workbench_customers.router, tags=["workbench-customers"])
+api_router.include_router(workbench_ai.router, tags=["workbench-ai"])
+api_router.include_router(workbench_goals.router, tags=["workbench-goals"])
+api_router.include_router(workbench_competitors.router, tags=["workbench-competitors"])
+api_router.include_router(workbench_payroll.router, tags=["workbench-payroll"])
+api_router.include_router(workbench_sessions.router, tags=["workbench-sessions"])
+api_router.include_router(workbench_templates.router, tags=["workbench-templates"])
+api_router.include_router(workbench_campaigns.router, tags=["workbench-campaigns"])
+api_router.include_router(workbench_social.router, tags=["workbench-social"])
 api_router.include_router(inventory_alerts_public.router, tags=["inventory-alerts"])
 api_router.include_router(events_public.router, tags=["activity"])
 api_router.include_router(unsubscribe_public.router, tags=["unsubscribe"])
