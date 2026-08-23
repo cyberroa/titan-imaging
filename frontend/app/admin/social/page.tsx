@@ -170,7 +170,7 @@ export default function AdminSocialPage() {
             <button
               type="submit"
               disabled={submitting || !form.body.trim()}
-              className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
+              className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
             >
               {submitting ? "Sending to Make…" : "Send to Make"}
             </button>

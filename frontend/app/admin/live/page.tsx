@@ -140,11 +140,11 @@ export default function AdminLivePage() {
               ) : (
                 hotLeads.map((lead) => (
                   <tr key={lead.customer_id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="px-4 py-3 font-mono text-accent-titanium">{lead.score.toFixed(1)}</td>
+                    <td className="px-4 py-3 font-mono text-accent-admin">{lead.score.toFixed(1)}</td>
                     <td className="px-4 py-3">
                       <Link
                         href={`/admin/customers/${lead.customer_id}`}
-                        className="font-semibold text-white hover:text-accent-titanium"
+                        className="font-semibold text-white hover:text-accent-admin"
                       >
                         {lead.name ?? lead.email}
                       </Link>
@@ -194,13 +194,13 @@ export default function AdminLivePage() {
               ) : (
                 sessions.map((row) => (
                   <tr key={row.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="px-4 py-3 font-mono text-accent-titanium">{row.score.toFixed(1)}</td>
+                    <td className="px-4 py-3 font-mono text-accent-admin">{row.score.toFixed(1)}</td>
                     <td className="px-4 py-3">
                       {row.customer ? (
                         <>
                           <Link
                             href={`/admin/customers/${row.customer.id}`}
-                            className="font-semibold text-white hover:text-accent-titanium"
+                            className="font-semibold text-white hover:text-accent-admin"
                           >
                             {row.customer.name ?? row.customer.email}
                           </Link>
@@ -220,7 +220,7 @@ export default function AdminLivePage() {
                     <td className="px-4 py-3 text-text-muted">{row.latest_search ?? "—"}</td>
                     <td className="px-4 py-3">
                       {row.parts_viewed.length > 0 ? (
-                        <span className="font-mono text-xs text-accent-titanium">
+                        <span className="font-mono text-xs text-accent-admin">
                           {row.parts_viewed.join(", ")}
                         </span>
                       ) : (

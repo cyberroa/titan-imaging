@@ -171,7 +171,7 @@ export default function AdminCampaignsPage() {
           <div className="sm:col-span-2">
             <button
               type="submit"
-              className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black"
+              className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black"
             >
               Create campaign
             </button>
@@ -220,7 +220,7 @@ export default function AdminCampaignsPage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/admin/campaigns/${c.id}`}
-                        className="text-accent-titanium hover:underline"
+                        className="text-accent-admin hover:underline"
                       >
                         {c.name}
                       </Link>
@@ -237,7 +237,7 @@ export default function AdminCampaignsPage() {
                         <button
                           type="button"
                           disabled={sendingId === c.id}
-                          className="mr-3 text-accent-titanium hover:underline disabled:opacity-50"
+                          className="mr-3 text-accent-admin hover:underline disabled:opacity-50"
                           onClick={() => void send(c.id)}
                         >
                           {sendingId === c.id ? "Sending…" : "Send now"}

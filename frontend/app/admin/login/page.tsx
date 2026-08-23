@@ -14,8 +14,12 @@ function LoginInner() {
   async function signIn() {
     const supabase = createClient();
     const next = "/admin/parts";
-    const site =
-      process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") || window.location.origin;
+    // Prefer the current browser origin for local OAuth so we never bounce to
+    // production Site URL when NEXT_PUBLIC_SITE_URL points at Vercel.
+    const envSite = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") || "";
+    const isLocalHost =
+      window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    const site = isLocalHost ? window.location.origin : envSite || window.location.origin;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -37,7 +41,7 @@ function LoginInner() {
           </p>
         </div>
       ) : null}
-      <Eyebrow>Titan Imaging</Eyebrow>
+      <Eyebrow tone="admin">Titan Imaging</Eyebrow>
       <h1 className="mt-3 text-3xl font-bold">Admin sign in</h1>
       <p className="mt-3 max-w-md text-text-secondary">
         Use your Google account. Access is limited to approved emails.
@@ -52,7 +56,7 @@ function LoginInner() {
         type="button"
         disabled={!supabaseOk}
         onClick={() => void signIn()}
-        className="mt-10 rounded-lg bg-white px-8 py-3 text-sm font-semibold text-black transition hover:bg-accent-titanium disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-10 rounded-lg bg-accent-admin px-8 py-3 text-sm font-semibold text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Continue with Google
       </button>

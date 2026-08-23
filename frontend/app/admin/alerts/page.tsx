@@ -85,7 +85,7 @@ export default function AdminAlertsPage() {
                 <tr key={r.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                   <td className="px-4 py-3">{r.email}</td>
                   <td className="px-4 py-3">
-                    <span className="font-mono text-xs text-accent-titanium">{r.part_number}</span>
+                    <span className="font-mono text-xs text-accent-admin">{r.part_number}</span>
                     <span className="ml-2 text-text-muted">{r.part_name}</span>
                   </td>
                   <td className="px-4 py-3">{r.active ? "yes" : "no"}</td>

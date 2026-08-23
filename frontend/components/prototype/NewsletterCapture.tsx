@@ -10,12 +10,14 @@ type NewsletterCaptureProps = {
   /** Compact = Better Stack–style inline row; stacked on mobile always */
   heading?: string;
   subcopy?: string;
+  trackSource?: string;
 };
 
 export function NewsletterCapture({
   className,
   heading = "Imaging service updates & insights",
   subcopy = "Occasional notes on GE PET/CT service, parts availability, and industry guides—no spam.",
+  trackSource = "newsletter",
 }: NewsletterCaptureProps) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
@@ -37,11 +39,11 @@ export function NewsletterCapture({
           email,
           subject: "Newsletter signup",
           message:
-            "Prototype homepage newsletter signup — please add to marketing / insights list.",
+            "Newsletter signup — please add to marketing / insights list.",
         }),
       });
       void identify(email);
-      void track("newsletter_signup", { source: "prototype_home" }, { email });
+      void track("newsletter_signup", { source: trackSource }, { email });
       form.reset();
       setStatus("sent");
     } catch {

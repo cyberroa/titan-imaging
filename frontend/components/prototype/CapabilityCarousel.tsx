@@ -16,8 +16,8 @@ export const CAPABILITY_SLIDES = [
     body: "Field service, preventive maintenance, and technical support for GE PET/CT—so hospitals and imaging centers stay operational with less downtime.",
     cta: { href: "/services", label: "View services" },
     image: IMAGES.aboutTitant,
-    imageAlt: "Technician supporting a PET/CT system",
-    imagePosition: "object-[center_30%]",
+    imageAlt: "Titan Imaging technician servicing a GE Omni PET/CT system",
+    imagePosition: "object-center",
   },
   {
     id: "buy-sell",
@@ -36,8 +36,8 @@ export const CAPABILITY_SLIDES = [
     title: "OEM and refurbished components, fast",
     body: "Rapid access to quality CT/PET parts with expert guidance—so replacements land when your team needs them.",
     cta: { href: "/inventory", label: "Search parts" },
-    image: IMAGES.sellImage,
-    imageAlt: "Imaging equipment and parts context",
+    image: IMAGES.prototypeParts,
+    imageAlt: "Organized inventory of OEM and refurbished PET/CT parts ready for sourcing",
     imagePosition: "object-center",
   },
 ] as const;
@@ -284,7 +284,7 @@ export function CapabilityCarousel() {
                       <Link
                         href={slide.cta.href}
                         onClick={focusCard}
-                        className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-titanium"
+                        className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-accent-ice"
                       >
                         {slide.cta.label}
                       </Link>

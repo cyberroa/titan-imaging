@@ -30,8 +30,8 @@ export function AdminPageHeader({
       )}
     >
       <div className={align === "center" ? undefined : "min-w-0 flex-1"}>
-        <Eyebrow>{eyebrow}</Eyebrow>
-        <h1 className="mt-3 text-3xl font-bold md:text-4xl">{title}</h1>
+        <Eyebrow tone="admin">{eyebrow}</Eyebrow>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">{title}</h1>
         {description ? (
           <div
             className={cn(

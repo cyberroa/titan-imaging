@@ -58,7 +58,7 @@ export default function AdminImportPage() {
         description={
           <p>
             Upload the CSV or Excel template from{" "}
-            <code className="text-accent-titanium">inventory-templates/</code>. Run a dry run first
+            <code className="text-accent-admin">inventory-templates/</code>. Run a dry run first
             to validate rows.
           </p>
         }
@@ -88,7 +88,7 @@ export default function AdminImportPage() {
         <button
           type="submit"
           disabled={!file || !token || busy}
-          className="mt-6 rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black disabled:opacity-40"
+          className="mt-6 rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black disabled:opacity-40"
         >
           {busy ? "Working…" : "Upload"}
         </button>

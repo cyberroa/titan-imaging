@@ -196,7 +196,7 @@ export default function AdminSegmentsPage() {
           <div className="flex flex-wrap gap-3">
             <button
               type="submit"
-              className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black"
+              className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black"
             >
               {editingId ? "Save changes" : "Create segment"}
             </button>
@@ -250,19 +250,19 @@ export default function AdminSegmentsPage() {
               rows.map((s) => (
                 <tr key={s.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                   <td className="px-4 py-3">{s.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-accent-titanium">{s.slug}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-accent-admin">{s.slug}</td>
                   <td className="px-4 py-3 text-text-muted">{s.description ?? "—"}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"
-                      className="mr-3 text-accent-titanium hover:underline"
+                      className="mr-3 text-accent-admin hover:underline"
                       onClick={() => void runPreview(s)}
                     >
                       Preview
                     </button>
                     <button
                       type="button"
-                      className="mr-3 text-accent-titanium hover:underline"
+                      className="mr-3 text-accent-admin hover:underline"
                       onClick={() => startEdit(s)}
                     >
                       Edit

@@ -92,7 +92,7 @@ export default function CampaignDetailPage() {
   return (
     <>
       <p className="text-sm">
-        <Link href="/admin/campaigns" className="text-accent-titanium hover:underline">
+        <Link href="/admin/campaigns" className="text-accent-admin hover:underline">
           &larr; All campaigns
         </Link>
       </p>
@@ -121,7 +121,7 @@ export default function CampaignDetailPage() {
             ) : null}
             <button
               type="button"
-              className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-text-secondary hover:border-accent-titanium hover:text-accent-titanium"
+              className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-text-secondary hover:border-accent-admin hover:text-accent-admin"
               onClick={() => void runPreview()}
             >
               Preview email

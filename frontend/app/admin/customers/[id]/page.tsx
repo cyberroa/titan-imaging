@@ -105,7 +105,7 @@ export default function AdminCustomerDetailPage() {
   return (
     <>
       <p className="text-sm">
-        <Link href="/admin/customers" className="text-accent-titanium hover:underline">
+        <Link href="/admin/customers" className="text-accent-admin hover:underline">
           &larr; All customers
         </Link>
       </p>
@@ -174,7 +174,7 @@ export default function AdminCustomerDetailPage() {
                   type="button"
                   disabled={saving}
                   onClick={() => void save()}
-                  className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                  className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
                 >
                   {saving ? "Saving…" : "Save changes"}
                 </button>
@@ -193,7 +193,7 @@ export default function AdminCustomerDetailPage() {
                       className="rounded-md border border-white/10 bg-black/20 px-3 py-2"
                     >
                       <p className="flex items-center justify-between gap-3">
-                        <span className="font-semibold text-accent-titanium">{it.label}</span>
+                        <span className="font-semibold text-accent-admin">{it.label}</span>
                         <span className="text-xs text-text-muted">
                           {new Date(it.occurred_at).toLocaleString()}
                         </span>

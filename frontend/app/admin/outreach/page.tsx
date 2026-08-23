@@ -74,15 +74,15 @@ export default function AdminOutreachPage() {
             </p>
             <p className="text-sm text-text-muted">
               For anything reusable — newsletters, announcements, drip sequences — use{" "}
-              <Link href="/admin/campaigns" className="text-accent-titanium underline">
+              <Link href="/admin/campaigns" className="text-accent-admin underline">
                 Campaigns
               </Link>{" "}
               with a saved{" "}
-              <Link href="/admin/templates" className="text-accent-titanium underline">
+              <Link href="/admin/templates" className="text-accent-admin underline">
                 template
               </Link>{" "}
               and{" "}
-              <Link href="/admin/segments" className="text-accent-titanium underline">
+              <Link href="/admin/segments" className="text-accent-admin underline">
                 segment
               </Link>
               . Those sends include open/click tracking and appear on the customer timeline.
@@ -126,7 +126,7 @@ export default function AdminOutreachPage() {
         <button
           type="submit"
           disabled={!token || busy}
-          className="mt-6 rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black disabled:opacity-40"
+          className="mt-6 rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black disabled:opacity-40"
         >
           {busy ? "Sending…" : "Send"}
         </button>

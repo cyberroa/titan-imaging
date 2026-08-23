@@ -242,7 +242,7 @@ export default function AdminCustomersPage() {
             <div className="sm:col-span-2">
               <button
                 type="submit"
-                className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black"
+                className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black"
               >
                 Add customer
               </button>
@@ -274,7 +274,7 @@ export default function AdminCustomersPage() {
             <button
               type="submit"
               disabled={!file}
-              className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
+              className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
             >
               Upload
             </button>
@@ -314,7 +314,7 @@ export default function AdminCustomersPage() {
         />
         <button
           type="button"
-          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-text-secondary hover:border-accent-titanium hover:text-accent-titanium"
+          className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-text-secondary hover:border-accent-admin hover:text-accent-admin"
           onClick={() => token && void load(token, search)}
         >
           Search
@@ -352,7 +352,7 @@ export default function AdminCustomersPage() {
                   <td className="px-4 py-3">
                     <Link
                       href={`/admin/customers/${c.id}`}
-                      className="text-accent-titanium hover:underline"
+                      className="text-accent-admin hover:underline"
                     >
                       {c.email}
                     </Link>

@@ -73,8 +73,8 @@ export default function AdminCategoriesPage() {
         description={
           <p>
             Slugs are used by the inventory API and import template (e.g.{" "}
-            <code className="text-accent-titanium">ct</code>,{" "}
-            <code className="text-accent-titanium">pet</code>).
+            <code className="text-accent-admin">ct</code>,{" "}
+            <code className="text-accent-admin">pet</code>).
           </p>
         }
       />
@@ -103,7 +103,7 @@ export default function AdminCategoriesPage() {
         </label>
         <button
           type="submit"
-          className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black"
+          className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black"
         >
           Add category
         </button>
@@ -135,7 +135,7 @@ export default function AdminCategoriesPage() {
               rows.map((c) => (
                 <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                   <td className="px-4 py-3">{c.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-accent-titanium">{c.slug}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-accent-admin">{c.slug}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"

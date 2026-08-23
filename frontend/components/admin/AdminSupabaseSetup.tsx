@@ -1,11 +1,11 @@
 export function AdminSupabaseSetup() {
   return (
     <div className="mx-auto max-w-xl px-6 py-16 text-center">
-      <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-titanium">Admin</p>
+      <p className="font-display text-[11px] uppercase tracking-[0.25em] text-accent-admin">Admin</p>
       <h1 className="mt-3 text-2xl font-bold">Configure Supabase for local admin</h1>
       <p className="mt-4 text-text-secondary">
-        Create <code className="text-accent-titanium">frontend/.env.local</code> (copy from{" "}
-        <code className="text-accent-titanium">.env.example</code>) and set:
+        Create <code className="text-accent-admin">frontend/.env.local</code> (copy from{" "}
+        <code className="text-accent-admin">.env.example</code>) and set:
       </p>
       <ul className="mt-6 list-inside list-disc space-y-2 text-left text-sm text-text-muted">
         <li>

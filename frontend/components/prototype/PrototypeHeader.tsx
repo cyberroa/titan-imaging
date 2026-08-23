@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { TitanMark } from "@/components/prototype/BrandMarks";
+import { TitanWordmark } from "@/components/prototype/BrandMarks";
+import { StaffAccessLink } from "@/components/StaffAccessLink";
 import { cn } from "@/lib/cn";
 import { PROTO_NAV, PROTO_NAV_MORE, PROTO_NAV_PRIMARY, type ProtoNavItem } from "@/lib/prototype-nav";
 
@@ -14,6 +15,7 @@ export function PrototypeHeader() {
   const [scrolled, setScrolled] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelDomId = useId();
+  const homeHref = pathname.startsWith("/prototype") ? "/prototype" : "/";
 
   const activeItem = PROTO_NAV.find((i) => i.id === panelId) ?? null;
   const panelOpen = Boolean(activeItem);
@@ -74,13 +76,13 @@ export function PrototypeHeader() {
         onMouseLeave={scheduleClose}
       >
         <Link
-          href="/prototype"
+          href={homeHref}
           className="flex min-w-0 shrink items-center"
           onClick={() => setMobileOpen(false)}
           onMouseEnter={() => setPanelId(null)}
           aria-label="Titan Imaging Service — home"
         >
-          <TitanMark size="nav" />
+          <TitanWordmark />
         </Link>
 
         {/* Desktop nav — centered cluster */}
@@ -116,6 +118,7 @@ export function PrototypeHeader() {
         </nav>
 
         <div className="flex items-center gap-2" onMouseEnter={() => setPanelId(null)}>
+          <StaffAccessLink variant="header" />
           <Link
             href="/contact"
             className="hidden rounded-md bg-accent-ice px-3.5 py-1.5 text-sm font-semibold text-black transition hover:brightness-110 md:inline-flex"

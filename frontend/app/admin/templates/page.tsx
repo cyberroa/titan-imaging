@@ -245,7 +245,7 @@ export default function AdminTemplatesPage() {
           <div className="flex flex-wrap gap-3 sm:col-span-2">
             <button
               type="submit"
-              className="rounded-lg bg-accent-titanium px-6 py-2 text-sm font-semibold text-black"
+              className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black"
             >
               {editingId ? "Save changes" : "Create template"}
             </button>
@@ -299,19 +299,19 @@ export default function AdminTemplatesPage() {
               rows.map((t) => (
                 <tr key={t.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                   <td className="px-4 py-3">{t.name}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-accent-titanium">{t.slug}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-accent-admin">{t.slug}</td>
                   <td className="px-4 py-3 text-text-muted">{t.subject}</td>
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"
-                      className="mr-3 text-accent-titanium hover:underline"
+                      className="mr-3 text-accent-admin hover:underline"
                       onClick={() => void runPreview(t.id)}
                     >
                       Preview
                     </button>
                     <button
                       type="button"
-                      className="mr-3 text-accent-titanium hover:underline"
+                      className="mr-3 text-accent-admin hover:underline"
                       onClick={() => startEdit(t)}
                     >
                       Edit

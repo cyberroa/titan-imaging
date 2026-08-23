@@ -14,8 +14,10 @@ const config: Config = {
         accent: {
           DEFAULT: "#00ffd5",
           titanium: "#a9b4c2",
-          /** Cool scanner-console blue — used on layout prototype */
+          /** Public marketing accent */
           ice: "#6EC9F0",
+          /** Admin backend accent — McLaren papaya; distinct from public ice */
+          admin: "#FF8700",
         },
         text: {
           primary: "#ffffff",
