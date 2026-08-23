@@ -10,6 +10,8 @@ export type WorkbenchNavLink = {
   ownerOnly?: boolean;
   /** Accounting capability or owner */
   accountingOnly?: boolean;
+  /** Hide from owners (e.g. My Pay — owners assign packages, staff accept) */
+  hideForOwner?: boolean;
 };
 
 export type WorkbenchNavGroup = {
@@ -24,9 +26,9 @@ export const WORKBENCH_NAV_GROUPS: WorkbenchNavGroup[] = [
   {
     id: "ai",
     label: "AI",
-    href: "/workbench",
+    href: "/workbench/studio",
     links: [
-      { href: "/workbench", label: "AI Studio", detail: "Prompts, models, generate content", requiredCapabilities: ["marketing"] },
+      { href: "/workbench/studio", label: "AI Studio", detail: "Prompts, models, generate content", requiredCapabilities: ["marketing"] },
       { href: "/workbench/live", label: "Live", detail: "Active visitors and hot leads", requiredCapabilities: ["sales", "marketing"] },
       { href: "/workbench/insights", label: "Market Map", detail: "CRM graph exploration", requiredCapabilities: ["sales", "marketing"] },
       { href: "/workbench/briefings", label: "Briefings", detail: "Daily AI staff reports", requiredCapabilities: ["marketing"] },
@@ -61,7 +63,7 @@ export const WORKBENCH_NAV_GROUPS: WorkbenchNavGroup[] = [
       { href: "/workbench/sales", label: "Sales", detail: "Log conversions", requiredCapabilities: ["sales"] },
       { href: "/workbench/service", label: "Service", detail: "Field repair & site jobs", requiredCapabilities: ["technician", "support"] },
       { href: "/workbench/team", label: "Team", detail: "Staff profiles and pay packages", ownerOnly: true },
-      { href: "/workbench/my-pay", label: "My Pay", detail: "Accept your terms" },
+      { href: "/workbench/mypay", label: "My Pay", detail: "Accept your terms", hideForOwner: true },
       { href: "/workbench/payroll", label: "Payroll", detail: "Payout dashboard", accountingOnly: true },
     ],
   },
@@ -87,6 +89,7 @@ export type StaffAccess = {
 export function canAccessNavLink(access: StaffAccess | null, link: WorkbenchNavLink): boolean {
   if (!access) return true; // show all until loaded (API still enforces)
   const isOwner = access.staffTier === "owner";
+  if (link.hideForOwner && isOwner) return false;
   if (link.ownerOnly) return isOwner;
   if (link.accountingOnly) {
     return isOwner || access.effectiveCapabilities.includes("accounting");

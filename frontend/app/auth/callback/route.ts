@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const next = requestUrl.searchParams.get("next") ?? "/workbench/my-pay";
+  const next = requestUrl.searchParams.get("next") ?? "/workbench";
 
   if (!code) {
     return NextResponse.redirect(new URL("/workbench/login?error=auth", request.url));

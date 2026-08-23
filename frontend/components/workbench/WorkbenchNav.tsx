@@ -77,10 +77,10 @@ function NavPanel({
 }
 
 type MeResponse = {
-  workbench_tier?: string;
   staff_tier?: string;
+  workbench_tier?: string;
   effective_capabilities?: string[];
-  staff?: { workbench_tier?: string; staff_tier?: string; effective_capabilities?: string[] };
+  staff?: { staff_tier?: string; workbench_tier?: string; effective_capabilities?: string[] };
   default_landing?: string;
 };
 
@@ -104,7 +104,7 @@ export function WorkbenchNav() {
       void apiFetchWithAuth<MeResponse>("/api/v1/workbench/staff/me", session.access_token)
         .then((me) => {
           setAccess({
-            staffTier: me.workbench_tier || me.staff_tier || me.staff?.workbench_tier || me.staff?.staff_tier || "staff",
+            staffTier: me.staff_tier || me.workbench_tier || me.staff?.staff_tier || me.staff?.workbench_tier || "staff",
             effectiveCapabilities: me.effective_capabilities || me.staff?.effective_capabilities || [],
           });
         })
@@ -167,7 +167,7 @@ export function WorkbenchNav() {
     );
   }
 
-  const homeHref = groups[0]?.links[0]?.href || groups[0]?.href || "/workbench/my-pay";
+  const homeHref = "/workbench";
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/10 bg-[#16161b]/90 shadow-[inset_0_-1px_0_0_rgba(255,135,0,0.22)] backdrop-blur-md">

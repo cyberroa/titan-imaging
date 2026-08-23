@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         destination: "/workbench/:path*",
         permanent: true,
       },
+      {
+        source: "/workbench/my-pay",
+        destination: "/workbench/mypay",
+        permanent: true,
+      },
     ];
   },
 };

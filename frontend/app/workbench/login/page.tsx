@@ -13,7 +13,7 @@ function LoginInner() {
 
   async function signIn() {
     const supabase = createClient();
-    const next = "/workbench/my-pay";
+    const next = "/workbench";
     // Prefer the current browser origin for local OAuth so we never bounce to
     // production Site URL when NEXT_PUBLIC_SITE_URL points at Vercel.
     const envSite = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") || "";

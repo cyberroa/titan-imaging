@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { WorkbenchPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
-import { apiFetchWithAuth } from '@/lib/api-workbench';
+import { apiFetchWithAuth } from "@/lib/api-workbench";
 import { createClient } from "@/lib/supabase/client";
 
 type MeResponse = {
-  staff: { id: string; email: string; display_name: string | null; role: string };
+  staff_tier?: string;
+  staff: {
+    id: string;
+    email: string;
+    display_name: string | null;
+    role: string;
+    staff_tier?: string;
+  };
   pending_assignment: {
     id: string;
     status: string;
@@ -16,7 +24,8 @@ type MeResponse = {
   active_assignment: { id: string; accepted_at: string | null; status: string } | null;
 };
 
-export default function AdminMyPayPage() {
+export default function MyPayPage() {
+  const router = useRouter();
   const [token, setToken] = useState<string | null>(null);
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,11 +36,18 @@ export default function AdminMyPayPage() {
       setToken(session?.access_token ?? null);
       if (session?.access_token) {
         apiFetchWithAuth<MeResponse>("/api/v1/workbench/staff/me", session.access_token)
-          .then(setMe)
+          .then((data) => {
+            const tier = data.staff_tier || data.staff?.staff_tier || "";
+            if (tier === "owner") {
+              router.replace("/workbench/team");
+              return;
+            }
+            setMe(data);
+          })
           .catch((e) => setError(e instanceof ApiError ? String(e.message) : "Failed"));
       }
     });
-  }, []);
+  }, [router]);
 
   async function accept() {
     if (!token || !me?.pending_assignment) return;

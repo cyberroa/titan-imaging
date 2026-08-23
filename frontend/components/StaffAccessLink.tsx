@@ -83,7 +83,7 @@ export function StaffAccessLink({ className, variant = "footer" }: StaffAccessLi
   if (signedIn) {
     return (
       <Link
-        href="/workbench/parts"
+        href="/workbench"
         className={cn(
           variant === "header"
             ? "hidden rounded-md border border-white/15 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-white/30 hover:text-white md:inline-flex md:items-center md:gap-2"
@@ -107,7 +107,7 @@ export function StaffAccessLink({ className, variant = "footer" }: StaffAccessLi
         className,
       )}
     >
-      <GoogleGLogo className="shrink-0" />
+      {variant === "footer" ? <GoogleGLogo className="shrink-0" /> : null}
       <span>Staff Login</span>
     </Link>
   );

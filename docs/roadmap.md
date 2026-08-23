@@ -25,7 +25,7 @@
 | **4B-E** | AI email/social drafts | **Complete in code** |
 | **4B-F** | Market Map (graph CRM) | **Complete in code** |
 | **4B-G** | Daily AI briefings → email + Slack | **Complete in code** |
-| **4B-H** | AI Studio (`/workbench` home) | **Complete in code** |
+| **4B-H** | AI Studio (`/workbench/studio`) | **Complete in code** |
 | **4B-I** | Staff payroll & sales commission | **Complete in code** |
 | **4B-J** | Goals → opportunity segments | **Complete in code** |
 | 4B-S3 | Competitor listings (Firecrawl) | **Complete in code** (needs `FIRECRAWL_API_KEY`) |
@@ -146,11 +146,11 @@ flowchart TB
 
 | Item | Detail |
 |------|--------|
-| **Scope** | `/workbench` home — IDE-style prompts, model dropdown, text + Gemini images, promote to template/social |
+| **Scope** | `/workbench/studio` — IDE-style prompts, model dropdown, text + Gemini images, promote to template/social |
 | **DB** | `ai_prompt_presets`, `ai_studio_runs` |
 | **Backend** | `backend/app/ai/studio.py`, `images.py` |
 | **API** | `/api/v1/workbench/ai/studio/*`, `/api/v1/workbench/ai/models`, `/api/v1/workbench/ai/prompts` |
-| **UI** | `/workbench` (AI Studio) |
+| **UI** | `/workbench/studio` (Workbench AI Studio); Welcome sitemap at `/workbench` |
 | **Env** | `OPENROUTER_API_KEY`, optional `GOOGLE_AI_API_KEY`, `AI_ALLOWED_MODELS` |
 
 ### Phase I — Staff payroll & sales ✅
@@ -158,7 +158,7 @@ flowchart TB
 | Item | Detail |
 |------|--------|
 | **Scope** | Admin profiles, tiers (Owner / Ops lead / Staff) + capabilities (marketing, sales, support, accounting, technician), pay packages, sales/hours, **service** jobs (repair + **PET/CT audit**), **adhoc** ledger, payroll graphs |
-| **DB** | … `workbench_staff.workbench_tier`, `workbench_staff.capabilities`, `service_jobs`, `earnings_ledger` |
+| **DB** | … `workbench_staff.staff_tier`, `workbench_staff.capabilities`, `service_jobs`, `earnings_ledger` |
 | **Backend** | … `staff_permissions.py`, `POST /admin/service-jobs`, `POST /admin/payroll/adhoc` |
 | **UI** | **Titan Workbench** (`/workbench/*`) — Team role editor, filtered nav, `/workbench/service`, `/workbench/payroll` |
 | **Env** | `OWNER_EMAILS` (comma-separated — uncle gets owner role) |
@@ -273,7 +273,7 @@ Navigation is **grouped** (AI · CRM · Marketing · Sales & Pay · Inventory) a
 
 ### Staff tiers & capabilities
 
-| Tier (display) | `workbench_tier` | Capabilities |
+| Tier (display) | `staff_tier` | Capabilities |
 |----------------|--------------|--------------|
 | Owner | `owner` | All |
 | Ops lead | `admin` | marketing, sales, support, technician (not accounting / team CRUD) |
@@ -291,7 +291,10 @@ Assign roles on **Team** (owner only).
 
 | URL | Purpose | Nav group |
 |-----|---------|-----------|
-| `/workbench` | **AI Studio** — prompts, models, generate, promote | AI |
+| `/workbench` | **Welcome** — sitemap + links to feature guides | Home |
+| `/workbench/guides` | Guide index (stubs → full how-tos over time) | Home |
+| `/workbench/guides/[slug]` | Per-feature how-to guide | Home |
+| `/workbench/studio` | **AI Studio** — prompts, models, generate, promote | AI |
 | `/workbench/live` | Live sessions + hot leads | AI |
 | `/workbench/insights` | Market Map | AI |
 | `/workbench/briefings` | Daily AI reports | AI |
@@ -306,7 +309,7 @@ Assign roles on **Team** (owner only).
 | `/workbench/sales` | Log conversions | Sales & Pay |
 | `/workbench/service` | Field service / repair jobs at customer sites | Sales & Pay |
 | `/workbench/team` | Staff roster + assign pay package | Sales & Pay |
-| `/workbench/my-pay` | Accept commission/hourly terms | Sales & Pay |
+| `/workbench/mypay` | Accept commission/hourly terms | Sales & Pay |
 | `/workbench/payroll` | Owner dashboard (charts) | Sales & Pay |
 | `/workbench/parts` | Inventory | Inventory |
 | `/workbench/competitors` | Competitor scrape (Firecrawl) + price compare | Inventory |
@@ -342,8 +345,9 @@ Expected head revisions (August 2026):
 | `20260823_0005` | `competitor_sources`, `competitor_listings` |
 | `20260823_0006` | `service_jobs` (field service → `service` ledger) |
 | `20260823_0007` | audit scheduling + `audit_report` intake on `service_jobs` |
-| `20260823_0008` | `workbench_staff.workbench_tier` + `capabilities` (Workbench RBAC) |
+| `20260823_0008` | `workbench_staff.staff_tier` + `capabilities` (Workbench RBAC) |
 | `20260823_0009` | rename `admin_staff` to `workbench_staff`, `staff_tier` to `workbench_tier` |
+| `20260823_0010` | rename `workbench_tier` back to `staff_tier` |
 
 ### 5.2 Backend env (Render + local `backend/.env`)
 
@@ -379,7 +383,7 @@ After changing Render env: **restart the API service**.
 
 1. Set `OWNER_EMAILS=uncle@...` and restart API.  
 2. `/workbench/team` → **Create default pay package** → assign to admins.  
-3. Each admin → `/workbench/my-pay` → **Accept terms**.  
+3. Each admin → `/workbench/mypay` → **Accept terms**.  
 4. `/workbench/sales` → log a test conversion.  
 5. `/workbench/payroll` → charts + owed amounts (owner only).
 
