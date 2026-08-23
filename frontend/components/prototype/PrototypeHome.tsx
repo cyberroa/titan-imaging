@@ -141,7 +141,7 @@ export function PrototypeHome() {
 
           <div className="mt-12 text-center">
             <LinkButton href="/about" variant="secondary" size="md">
-              About Titan
+              About us
             </LinkButton>
           </div>
         </div>
