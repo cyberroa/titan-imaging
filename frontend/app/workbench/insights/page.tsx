@@ -91,9 +91,9 @@ export default function AdminInsightsPage() {
                   {JSON.stringify(selected.meta, null, 2)}
                 </pre>
               )}
-              {selected.type === "customer" && selected.meta?.email && (
+              {selected.type === "customer" && typeof selected.meta?.email === "string" && (
                 <Link
-                  href={`/workbench/customers?search=${encodeURIComponent(String(selected.meta.email))}`}
+                  href={`/workbench/customers?search=${encodeURIComponent(selected.meta.email)}`}
                   className="inline-block text-accent-admin underline"
                 >
                   Open in Customers
