@@ -31,11 +31,20 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isAdminLogin = pathname === "/admin/login";
 
-  if (pathname.startsWith("/admin") && !isAdminLogin) {
+  // Legacy /admin bookmarks → /workbench (also covered by next.config redirects)
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    const dest = pathname.replace(/^\/admin/, "/workbench") || "/workbench";
+    const u = request.nextUrl.clone();
+    u.pathname = dest;
+    return NextResponse.redirect(u);
+  }
+
+  const isWorkbenchLogin = pathname === "/workbench/login";
+
+  if (pathname.startsWith("/workbench") && !isWorkbenchLogin) {
     if (!user) {
-      const u = new URL("/admin/login", request.url);
+      const u = new URL("/workbench/login", request.url);
       return NextResponse.redirect(u);
     }
     const allow = process.env.NEXT_PUBLIC_ADMIN_EMAIL_ALLOWLIST || "";
@@ -48,7 +57,7 @@ export async function proxy(request: NextRequest) {
       );
       const email = user.email?.toLowerCase();
       if (!email || !allowed.has(email)) {
-        return NextResponse.redirect(new URL("/admin/login?error=forbidden", request.url));
+        return NextResponse.redirect(new URL("/workbench/login?error=forbidden", request.url));
       }
     }
   }
@@ -57,5 +66,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/auth/callback"],
+  matcher: ["/workbench/:path*", "/admin", "/admin/:path*", "/auth/callback"],
 };

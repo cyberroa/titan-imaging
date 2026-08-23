@@ -1,0 +1,385 @@
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { ApiError } from "@/lib/api";
+import { apiFetchWithAuth } from '@/lib/api-workbench';
+import { createClient } from "@/lib/supabase/client";
+
+type Customer = {
+  id: string;
+  email: string;
+  name: string | null;
+  company: string | null;
+  phone: string | null;
+  role: string | null;
+  tags: string[];
+  source: string | null;
+  notes: string | null;
+  consent_marketing: boolean;
+  consent_source: string | null;
+  consent_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type TimelineItem = {
+  kind: string;
+  occurred_at: string;
+  label: string;
+  data: Record<string, unknown>;
+};
+
+type Timeline = {
+  customer: Customer;
+  items: TimelineItem[];
+};
+
+type Briefing = {
+  customer_id: string;
+  content: string;
+  model: string;
+  timeline_hash: string;
+  generated_at: string;
+  cached: boolean;
+  score: number | null;
+  disabled?: boolean;
+  message?: string | null;
+};
+
+type Opportunity = {
+  opportunity_type: string;
+  score: number;
+  reasons: string[];
+  as_of_date: string;
+};
+
+const OPP_LABELS: Record<string, string> = {
+  warm_parts_inquiry: "Warm parts inquiry",
+  cooling_engaged: "Cooling engaged",
+  sell_equipment: "Sell equipment",
+  consent_ready_nurture: "Consent-ready nurture",
+  hot_lead: "Hot lead",
+};
+
+function urgencyClass(urgency: unknown): string {
+  if (urgency === "high") return "bg-red-500/20 text-red-200 border-red-500/30";
+  if (urgency === "medium") return "bg-amber-500/20 text-amber-100 border-amber-500/30";
+  return "bg-white/10 text-text-muted border-white/15";
+}
+
+export default function AdminCustomerDetailPage() {
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
+  const [token, setToken] = useState<string | null>(null);
+  const [data, setData] = useState<Timeline | null>(null);
+  const [briefing, setBriefing] = useState<Briefing | null>(null);
+  const [briefingLoading, setBriefingLoading] = useState(false);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [editNotes, setEditNotes] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [consent, setConsent] = useState(false);
+
+  const loadBriefing = useCallback(
+    async (t: string, regenerate = false) => {
+      if (!id) return;
+      setBriefingLoading(true);
+      setBriefingError(null);
+      try {
+        const path = regenerate
+          ? `/api/v1/workbench/customers/${id}/briefing/regenerate`
+          : `/api/v1/workbench/customers/${id}/briefing`;
+        const r = await apiFetchWithAuth<Briefing>(path, t, {
+          method: regenerate ? "POST" : "GET",
+        });
+        setBriefing(r);
+      } catch (e) {
+        setBriefingError(
+          e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Briefing failed",
+        );
+      } finally {
+        setBriefingLoading(false);
+      }
+    },
+    [id],
+  );
+
+  const load = useCallback(
+    async (t: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const r = await apiFetchWithAuth<Timeline>(`/api/v1/workbench/customers/${id}/timeline`, t);
+        setData(r);
+        setEditNotes(r.customer.notes ?? "");
+        setEditTags(r.customer.tags.join(", "));
+        setConsent(r.customer.consent_marketing);
+        void loadBriefing(t);
+        try {
+          const opp = await apiFetchWithAuth<{ opportunities: Opportunity[] }>(
+            `/api/v1/workbench/customers/${id}/opportunities`,
+            t,
+          );
+          setOpportunities(opp.opportunities ?? []);
+        } catch {
+          setOpportunities([]);
+        }
+      } catch (e) {
+        setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Failed to load");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [id, loadBriefing],
+  );
+
+  useEffect(() => {
+    if (!id) return;
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setToken(session?.access_token ?? null);
+      if (session?.access_token) void load(session.access_token);
+      else setLoading(false);
+    });
+  }, [id, load]);
+
+  async function save() {
+    if (!token || !id) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await apiFetchWithAuth(`/api/v1/workbench/customers/${id}`, token, {
+        method: "PATCH",
+        body: JSON.stringify({
+          notes: editNotes || null,
+          tags: editTags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+          consent_marketing: consent,
+          consent_source: consent ? "admin" : null,
+        }),
+      });
+      await load(token);
+    } catch (err) {
+      setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <p className="text-sm">
+        <Link href="/workbench/customers" className="text-accent-admin hover:underline">
+          &larr; All customers
+        </Link>
+      </p>
+
+      {loading ? (
+        <p className="mt-6 text-text-muted">Loading…</p>
+      ) : !data ? (
+        <p className="mt-6 text-red-200">{error ?? "Not found"}</p>
+      ) : (
+        <>
+          <section className="mt-6">
+            <h1 className="text-2xl font-bold md:text-3xl">
+              {data.customer.name || data.customer.email}
+            </h1>
+            <p className="mt-1 text-sm text-text-muted">
+              {data.customer.email}
+              {data.customer.company ? ` · ${data.customer.company}` : null}
+              {data.customer.role ? ` · ${data.customer.role}` : null}
+            </p>
+          </section>
+
+          <div className="mt-6 rounded-xl border border-white/10 bg-background-card p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold">AI briefing</h2>
+                <p className="mt-1 text-xs text-text-muted">
+                  OpenRouter summary for call prep — cached until activity changes.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={!token || briefingLoading}
+                onClick={() => token && void loadBriefing(token, true)}
+                className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-text-secondary transition hover:border-accent-admin hover:text-accent-admin disabled:opacity-50"
+              >
+                {briefingLoading ? "Generating…" : "Regenerate"}
+              </button>
+            </div>
+
+            {briefingLoading && !briefing ? (
+              <p className="mt-4 text-sm text-text-muted">Generating briefing…</p>
+            ) : briefing?.disabled ? (
+              <p className="mt-4 rounded-lg border border-white/10 bg-black/30 px-4 py-3 text-sm text-text-muted">
+                AI is not configured. Set <code className="text-accent-admin">OPENROUTER_API_KEY</code>{" "}
+                and keep <code className="text-accent-admin">AI_ENABLED=true</code> on the API.
+                {briefing.message ? ` (${briefing.message})` : null}
+              </p>
+            ) : briefing?.content ? (
+              <div className="mt-4 space-y-3">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-secondary">
+                  {briefing.content}
+                </p>
+                <p className="text-xs text-text-muted">
+                  {briefing.score != null ? `Engagement score ${briefing.score} · ` : null}
+                  {briefing.cached ? "Cached · " : "Fresh · "}
+                  {briefing.model || "unknown model"} ·{" "}
+                  {new Date(briefing.generated_at).toLocaleString()}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-text-muted">No briefing yet.</p>
+            )}
+            {briefingError ? (
+              <p className="mt-3 text-sm text-red-200">{briefingError}</p>
+            ) : null}
+          </div>
+
+          {opportunities.length > 0 && (
+            <div className="mt-6 rounded-xl border border-white/10 bg-background-card p-6">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold">Opportunities</h2>
+                <Link href="/workbench/goals" className="text-sm text-accent-admin hover:underline">
+                  Goals →
+                </Link>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {opportunities.map((o) => (
+                  <div
+                    key={o.opportunity_type}
+                    className="max-w-xs rounded-lg border border-accent-admin/30 bg-accent-admin/10 px-3 py-2"
+                    title={(o.reasons || []).join("; ")}
+                  >
+                    <div className="text-sm font-semibold text-accent-admin">
+                      {OPP_LABELS[o.opportunity_type] || o.opportunity_type}
+                    </div>
+                    <div className="text-xs text-text-muted">
+                      score {o.score} · {o.as_of_date}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-white/10 bg-background-card p-6">
+              <h2 className="text-lg font-semibold">Details</h2>
+              <dl className="mt-3 grid grid-cols-[120px_1fr] gap-y-2 text-sm">
+                <dt className="text-text-muted">Phone</dt>
+                <dd>{data.customer.phone ?? "—"}</dd>
+                <dt className="text-text-muted">Source</dt>
+                <dd>{data.customer.source ?? "—"}</dd>
+                <dt className="text-text-muted">Added</dt>
+                <dd>{new Date(data.customer.created_at).toLocaleString()}</dd>
+                <dt className="text-text-muted">Consent</dt>
+                <dd>
+                  {data.customer.consent_marketing
+                    ? `yes (${data.customer.consent_source ?? "unknown"})`
+                    : "no"}
+                </dd>
+              </dl>
+
+              <div className="mt-4 space-y-3 text-sm">
+                <label className="block">
+                  <span className="text-text-muted">Tags (comma separated)</span>
+                  <input
+                    className="mt-1 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-text-muted">Notes</span>
+                  <textarea
+                    className="mt-1 min-h-[100px] w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                  />
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={consent}
+                    onChange={(e) => setConsent(e.target.checked)}
+                  />
+                  <span className="text-text-muted">Marketing consent</span>
+                </label>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void save()}
+                  className="rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black disabled:opacity-50"
+                >
+                  {saving ? "Saving…" : "Save changes"}
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-background-card p-6">
+              <h2 className="text-lg font-semibold">Timeline</h2>
+              {data.items.length === 0 ? (
+                <p className="mt-3 text-sm text-text-muted">No recorded activity yet.</p>
+              ) : (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {data.items.map((it, i) => {
+                    const sentiment = it.data.ai_sentiment;
+                    const urgency = it.data.ai_urgency;
+                    const summary = it.data.ai_summary;
+                    return (
+                      <li
+                        key={i}
+                        className="rounded-md border border-white/10 bg-black/20 px-3 py-2"
+                      >
+                        <p className="flex items-center justify-between gap-3">
+                          <span className="font-semibold text-accent-admin">{it.label}</span>
+                          <span className="text-xs text-text-muted">
+                            {new Date(it.occurred_at).toLocaleString()}
+                          </span>
+                        </p>
+                        <p className="mt-1 text-xs text-text-muted">{it.kind}</p>
+                        {typeof sentiment === "string" ? (
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span
+                              className={`rounded border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${urgencyClass(urgency)}`}
+                            >
+                              {String(sentiment)}
+                              {urgency ? ` · ${String(urgency)}` : ""}
+                            </span>
+                            {typeof it.data.ai_intent === "string" ? (
+                              <span className="text-[11px] text-text-muted">
+                                {String(it.data.ai_intent).replaceAll("_", " ")}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        {typeof summary === "string" && summary ? (
+                          <p className="mt-1 text-xs text-text-secondary">{summary}</p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {error ? (
+            <p className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+              {error}
+            </p>
+          ) : null}
+        </>
+      )}
+    </>
+  );
+}

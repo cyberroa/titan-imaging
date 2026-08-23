@@ -83,32 +83,32 @@ export function StaffAccessLink({ className, variant = "footer" }: StaffAccessLi
   if (signedIn) {
     return (
       <Link
-        href="/admin/parts"
+        href="/workbench/parts"
         className={cn(
           variant === "header"
-            ? "hidden rounded-md border border-white/15 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-white/30 hover:text-white md:inline-flex"
+            ? "hidden rounded-md border border-white/15 px-3 py-1.5 text-sm font-medium text-white/80 transition hover:border-white/30 hover:text-white md:inline-flex md:items-center md:gap-2"
             : "inline-flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:border-white/20 hover:text-white",
           className,
         )}
       >
-        Admin
+        <span>Workbench</span>
       </Link>
     );
   }
 
   return (
     <Link
-      href="/admin/login"
-      aria-label="Google Login — staff sign in"
+      href="/workbench/login"
+      aria-label="Google Login — staff workbench sign in"
       className={cn(
         variant === "header"
-          ? "hidden rounded-md border border-white/15 px-3 py-1.5 text-sm font-medium text-white/70 transition hover:border-white/30 hover:text-white md:inline-flex"
+          ? "hidden rounded-md border border-white/15 px-3 py-1.5 text-sm font-medium text-white/70 transition hover:border-white/30 hover:text-white md:inline-flex md:items-center md:gap-2"
           : "inline-flex items-center gap-2 rounded-md border border-white/10 bg-black/30 px-3 py-1.5 text-xs font-medium text-text-secondary transition hover:border-white/20 hover:text-white",
         className,
       )}
     >
-      {variant === "footer" ? <GoogleGLogo className="shrink-0" /> : null}
-      <span>Staff login</span>
+      <GoogleGLogo className="shrink-0" />
+      <span>Staff Login</span>
     </Link>
   );
 }

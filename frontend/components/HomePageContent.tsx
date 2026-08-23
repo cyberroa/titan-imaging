@@ -166,7 +166,18 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
         </section>
       ) : null}
 
-      {/* Core services grid — production four themes */}
+      {/* Newsletter — between Industry Experience and Core Services FadeRules */}
+      <section className="relative overflow-hidden bg-black py-16 md:py-20">
+        <div
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(110,201,240,0.07),_transparent_65%)]"
+          aria-hidden
+        />
+        <div className="relative px-6 md:px-12">
+          <NewsletterCapture trackSource={newsletterSource} />
+        </div>
+      </section>
+
+      {/* Core services + credibility proof */}
       {!isPreview ? (
         <section className="relative overflow-hidden bg-black py-20 md:py-28">
           <div
@@ -195,65 +206,36 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
                 </div>
               ))}
             </div>
+
+            <div className="mt-16 border-t border-white/10 pt-14 text-center md:mt-20 md:pt-16">
+              <p className="mx-auto max-w-2xl text-base leading-relaxed text-text-secondary md:text-lg">
+                Our owner spent years as a Regional PET/CT Zone Support Engineer at GE Healthcare—
+                training field engineers, running system audits, and overseeing major installations.
+                That rigor now backs every repair, parts order, and system transaction.
+              </p>
+              <dl className="mx-auto mt-10 grid max-w-4xl gap-8 sm:grid-cols-3 sm:gap-6">
+                {[
+                  ["100+", "System audits completed"],
+                  ["25+", "States served"],
+                  ["800+", "Facilities supported"],
+                ].map(([stat, label]) => (
+                  <div key={label} className="text-center">
+                    <dt className="font-display text-3xl font-bold tracking-wide text-accent-ice md:text-4xl">
+                      {stat}
+                    </dt>
+                    <dd className="mt-2 text-sm text-text-muted">{label}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-10">
+                <LinkButton href="/about" variant="secondary" size="md">
+                  About us
+                </LinkButton>
+              </div>
+            </div>
           </Container>
         </section>
       ) : null}
-
-      {/* Why Titan */}
-      <section className="relative overflow-hidden bg-black py-20 md:py-28">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(110,201,240,0.06),_transparent_50%)]"
-          aria-hidden
-        />
-        <FadeRule className="absolute inset-x-0 top-0" />
-        <div className="relative mx-auto max-w-6xl px-6 md:px-12">
-          <div className="mx-auto max-w-2xl text-center">
-            <Eyebrow className="text-accent-ice">Why Titan</Eyebrow>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight md:text-4xl">
-              Built on decades of GE PET/CT mastery
-            </h2>
-            <p className="mt-5 text-base leading-relaxed text-text-secondary md:text-lg">
-              Our owner spent years as a Regional PET/CT Zone Support Engineer at GE Healthcare—
-              training field engineers, running system audits, and overseeing major installations.
-              That rigor now backs every repair, parts order, and system transaction.
-            </p>
-          </div>
-          <dl className="mx-auto mt-14 grid max-w-4xl gap-6 sm:grid-cols-3">
-            {[
-              ["100+", "System audits completed"],
-              ["25+", "States served"],
-              ["800+", "Facilities supported"],
-            ].map(([stat, label]) => (
-              <div
-                key={label}
-                className="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-6 text-center"
-              >
-                <dt className="font-display text-3xl font-bold tracking-wide text-accent-ice md:text-4xl">
-                  {stat}
-                </dt>
-                <dd className="mt-2 text-sm text-text-muted">{label}</dd>
-              </div>
-            ))}
-          </dl>
-          <div className="mt-12 text-center">
-            <LinkButton href="/about" variant="secondary" size="md">
-              About us
-            </LinkButton>
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter */}
-      <section className="relative overflow-hidden bg-black py-16 md:py-20">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(110,201,240,0.07),_transparent_65%)]"
-          aria-hidden
-        />
-        <div className="relative px-6 md:px-12">
-          <NewsletterCapture trackSource={newsletterSource} />
-        </div>
-        <FadeRule className="absolute inset-x-0 bottom-0" />
-      </section>
 
       {/* Parts search — preview only (production has search in hero) */}
       {isPreview ? (
