@@ -47,7 +47,7 @@ ROUTE_CAPABILITIES: dict[str, frozenset[str]] = {
     "outreach": frozenset({"marketing"}),
     "sales": frozenset({"sales"}),
     "service": frozenset({"technician", "support"}),
-    "my_pay": frozenset(),  # any staff
+    "my_pay": frozenset(),  # non-owner staff only (see can_access_route)
     "team": frozenset(),  # owner tier only — checked separately
     "payroll": frozenset({"accounting"}),
     "parts": frozenset({"sales", "support", "technician"}),
@@ -59,7 +59,7 @@ ROUTE_CAPABILITIES: dict[str, frozenset[str]] = {
 
 # href → route id for nav filtering
 HREF_ROUTE_IDS: dict[str, str] = {
-    "/workbench": "ai_studio",
+    "/workbench/studio": "ai_studio",
     "/workbench/briefings": "briefings",
     "/workbench/live": "live",
     "/workbench/insights": "insights",
@@ -72,7 +72,7 @@ HREF_ROUTE_IDS: dict[str, str] = {
     "/workbench/outreach": "outreach",
     "/workbench/sales": "sales",
     "/workbench/service": "service",
-    "/workbench/my-pay": "my_pay",
+    "/workbench/mypay": "my_pay",
     "/workbench/team": "team",
     "/workbench/payroll": "payroll",
     "/workbench/parts": "parts",
@@ -107,7 +107,7 @@ def normalize_tier(raw: str | None, *, legacy_role: str | None = None) -> str:
 
 
 def effective_capabilities(staff: WorkbenchStaff) -> set[str]:
-    tier = normalize_tier(getattr(staff, "workbench_tier", None), legacy_role=getattr(staff, "role", None))
+    tier = normalize_tier(getattr(staff, "staff_tier", None), legacy_role=getattr(staff, "role", None))
     if tier == "owner":
         return set(ALL_CAPS)
     if tier == "admin":
@@ -116,7 +116,7 @@ def effective_capabilities(staff: WorkbenchStaff) -> set[str]:
 
 
 def is_owner_tier(staff: WorkbenchStaff) -> bool:
-    return normalize_tier(getattr(staff, "workbench_tier", None), legacy_role=getattr(staff, "role", None)) == "owner"
+    return normalize_tier(getattr(staff, "staff_tier", None), legacy_role=getattr(staff, "role", None)) == "owner"
 
 
 def has_capability(staff: WorkbenchStaff, capability: str) -> bool:
@@ -164,6 +164,9 @@ def can_access_route(staff: WorkbenchStaff, route_id: str) -> bool:
         return is_owner_tier(staff)
     if route_id == "payroll":
         return is_owner_tier(staff) or has_capability(staff, "accounting")
+    # My Pay is for staff accepting packages — owners use Team + Payroll instead
+    if route_id == "my_pay":
+        return not is_owner_tier(staff)
     caps = ROUTE_CAPABILITIES.get(route_id)
     if caps is None:
         return True
@@ -182,22 +185,23 @@ def can_access_href(staff: WorkbenchStaff, href: str) -> bool:
 def default_landing_href(staff: WorkbenchStaff) -> str:
     """First allowed workbench page for post-login redirect."""
     preference = [
+        "/workbench",
+        "/workbench/studio",
         "/workbench/service",
         "/workbench/sales",
         "/workbench/customers",
         "/workbench/campaigns",
         "/workbench/payroll",
         "/workbench/parts",
-        "/workbench",
-        "/workbench/my-pay",
+        "/workbench/mypay",
     ]
     for href in preference:
         if can_access_href(staff, href):
             return href
-    return "/workbench/my-pay"
+    return "/workbench"
 
 
 def sync_legacy_role(staff: WorkbenchStaff) -> None:
-    """Keep role column aligned with workbench_tier for older code paths."""
-    tier = normalize_tier(getattr(staff, "workbench_tier", None), legacy_role=getattr(staff, "role", None))
+    """Keep role column aligned with staff_tier for older code paths."""
+    tier = normalize_tier(getattr(staff, "staff_tier", None), legacy_role=getattr(staff, "role", None))
     staff.role = "owner" if tier == "owner" else ("admin" if tier == "admin" else "staff")

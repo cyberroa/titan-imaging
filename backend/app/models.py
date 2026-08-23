@@ -482,7 +482,7 @@ class WorkbenchStaff(Base):
     email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False, index=True)
     display_name: Mapped[str | None] = mapped_column(String(200), nullable=True)
     role: Mapped[str] = mapped_column(String(24), nullable=False, server_default="admin")
-    workbench_tier: Mapped[str] = mapped_column(String(24), nullable=False, server_default="staff")
+    staff_tier: Mapped[str] = mapped_column(String(24), nullable=False, server_default="staff")
     capabilities: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     phone: Mapped[str | None] = mapped_column(String(40), nullable=True)

@@ -54,7 +54,7 @@ router = APIRouter(prefix="/workbench", dependencies=[Depends(get_current_workbe
 
 
 def _staff_out(s: WorkbenchStaff) -> dict:
-    tier = normalize_tier(getattr(s, "workbench_tier", None), legacy_role=s.role)
+    tier = normalize_tier(getattr(s, "staff_tier", None), legacy_role=s.role)
     caps = normalize_capabilities(getattr(s, "capabilities", None) or [])
     eff = sorted(effective_capabilities(s))
     return {
@@ -62,8 +62,8 @@ def _staff_out(s: WorkbenchStaff) -> dict:
         "email": s.email,
         "display_name": s.display_name,
         "role": s.role,
-        "workbench_tier": tier,
-        "workbench_tier_label": TIER_LABELS.get(tier, tier),
+        "staff_tier": tier,
+        "staff_tier_label": TIER_LABELS.get(tier, tier),
         "capabilities": caps,
         "effective_capabilities": eff,
         "active": s.active,
@@ -80,7 +80,7 @@ def _ensure_staff(db: Session, admin: WorkbenchUser) -> WorkbenchStaff:
         # Sync owner emails → owner tier if configured
         settings = get_settings()
         if admin.email in settings.owner_emails_set and not is_owner_tier(row):
-            row.workbench_tier = "owner"
+            row.staff_tier = "owner"
             row.capabilities = sorted(CAPABILITIES)
             sync_legacy_role(row)
             db.commit()
@@ -93,7 +93,7 @@ def _ensure_staff(db: Session, admin: WorkbenchUser) -> WorkbenchStaff:
         email=admin.email,
         display_name=admin.email.split("@")[0],
         role="owner" if is_owner else "admin",
-        workbench_tier="owner" if is_owner else "admin",
+        staff_tier="owner" if is_owner else "admin",
         capabilities=sorted(CAPABILITIES) if is_owner else [],
         active=True,
     )
@@ -114,18 +114,18 @@ def _apply_staff_fields(s: WorkbenchStaff, body: dict[str, Any]) -> None:
         s.title = body["title"]
     if "notes" in body:
         s.notes = body["notes"]
-    raw_tier = body.get("workbench_tier") or body.get("staff_tier")
+    raw_tier = body.get("staff_tier") or body.get("workbench_tier")
     if raw_tier is not None:
         tier = normalize_tier(str(raw_tier))
         if tier not in STAFF_TIERS:
-            raise HTTPException(status_code=400, detail="invalid workbench_tier")
-        s.workbench_tier = tier
+            raise HTTPException(status_code=400, detail="invalid staff_tier")
+        s.staff_tier = tier
     if "capabilities" in body:
         s.capabilities = normalize_capabilities(body["capabilities"])
     # Owner / ops lead: clear explicit caps (implied by tier)
-    if s.workbench_tier == "owner":
+    if s.staff_tier == "owner":
         s.capabilities = sorted(CAPABILITIES)
-    elif s.workbench_tier == "admin":
+    elif s.staff_tier == "admin":
         s.capabilities = []
     sync_legacy_role(s)
 
@@ -160,7 +160,7 @@ def staff_me(db: Session = Depends(get_db), admin: WorkbenchUser = Depends(get_c
             }
     return {
         "staff": _staff_out(s),
-        "workbench_tier": normalize_tier(s.workbench_tier, legacy_role=s.role),
+        "staff_tier": normalize_tier(s.staff_tier, legacy_role=s.role),
         "capabilities": normalize_capabilities(s.capabilities or []),
         "effective_capabilities": sorted(effective_capabilities(s)),
         "default_landing": default_landing_href(s),
@@ -211,21 +211,21 @@ def create_staff(
         raise HTTPException(status_code=400, detail="email required")
     if db.scalar(select(WorkbenchStaff).where(WorkbenchStaff.email == email)):
         raise HTTPException(status_code=400, detail="Staff already exists")
-    tier = normalize_tier(body.get("workbench_tier") or body.get("staff_tier") or body.get("role") or "staff")
+    tier = normalize_tier(body.get("staff_tier") or body.get("workbench_tier") or body.get("role") or "staff")
     s = WorkbenchStaff(
         id=uuid.uuid4(),
         email=email,
         display_name=(body.get("display_name") or email.split("@")[0])[:200],
         role="admin",
-        workbench_tier=tier,
+        staff_tier=tier,
         capabilities=normalize_capabilities(body.get("capabilities") or []),
         active=True,
         phone=body.get("phone"),
         title=body.get("title"),
     )
-    if s.workbench_tier == "owner":
+    if s.staff_tier == "owner":
         s.capabilities = sorted(CAPABILITIES)
-    elif s.workbench_tier == "admin":
+    elif s.staff_tier == "admin":
         s.capabilities = []
     sync_legacy_role(s)
     db.add(s)

@@ -11,8 +11,8 @@ type Staff = {
   email: string;
   display_name: string | null;
   role: string;
-  workbench_tier: string;
-  workbench_tier_label: string;
+  staff_tier: string;
+  staff_tier_label: string;
   capabilities: string[];
   effective_capabilities: string[];
   active: boolean;
@@ -78,7 +78,7 @@ export default function AdminTeamPage() {
         method: "POST",
         body: JSON.stringify({
           email: email.trim(),
-          workbench_tier: tier,
+          staff_tier: tier,
           capabilities: tier === "staff" ? caps : [],
         }),
       });
@@ -98,7 +98,7 @@ export default function AdminTeamPage() {
       await apiFetchWithAuth(`/api/v1/workbench/staff/${staffId}`, token, {
         method: "PATCH",
         body: JSON.stringify({
-          workbench_tier: editTier,
+          staff_tier: editTier,
           capabilities: editTier === "staff" ? editCaps : [],
         }),
       });
@@ -209,7 +209,7 @@ export default function AdminTeamPage() {
               <div>
                 <p className="font-semibold text-white">{s.display_name || s.email}</p>
                 <p className="text-sm text-text-muted">
-                  {s.email} · {s.workbench_tier_label || s.workbench_tier}
+                  {s.email} · {s.staff_tier_label || s.staff_tier}
                   {s.effective_capabilities?.length
                     ? ` · ${s.effective_capabilities.join(", ")}`
                     : null}
@@ -220,7 +220,7 @@ export default function AdminTeamPage() {
                   type="button"
                   onClick={() => {
                     setEditingId(editingId === s.id ? null : s.id);
-                    setEditTier(s.workbench_tier || "staff");
+                    setEditTier(s.staff_tier || "staff");
                     setEditCaps(s.capabilities || []);
                   }}
                   className="rounded border border-white/20 px-3 py-1 text-xs font-semibold text-white"
