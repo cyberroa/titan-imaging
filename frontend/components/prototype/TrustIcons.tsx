@@ -34,17 +34,30 @@ export function IconExchange({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M7 8h11l-2.5-2.5M17 16H6l2.5 2.5"
+        d="M4 8h12.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M14 5.5 17.5 8 14 10.5"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
-        d="M18 8v3M6 16v-3"
+        d="M20 16H7.5"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinecap="round"
+      />
+      <path
+        d="M10 13.5 6.5 16 10 18.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );

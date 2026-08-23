@@ -11,11 +11,13 @@ export function PrototypeHeader() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [panelId, setPanelId] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const panelDomId = useId();
 
   const activeItem = PROTO_NAV.find((i) => i.id === panelId) ?? null;
   const panelOpen = Boolean(activeItem);
+  const solid = scrolled || panelOpen || mobileOpen;
 
   const clearCloseTimer = () => {
     if (closeTimer.current) {
@@ -35,6 +37,13 @@ export function PrototypeHeader() {
   };
 
   useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
     setMobileOpen(false);
     setPanelId(null);
   }, [pathname]);
@@ -51,8 +60,15 @@ export function PrototypeHeader() {
   useEffect(() => () => clearCloseTimer(), []);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-50 bg-[#0b0b0b]">
-      {/* Thin Tesla-like bar — opaque, no glass */}
+    <header
+      className={cn(
+        "fixed left-0 right-0 top-0 z-50 transition-[background-color,backdrop-filter,box-shadow] duration-300",
+        solid
+          ? "bg-[#141414]/95 shadow-[0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-md"
+          : "bg-transparent shadow-none",
+      )}
+    >
+      {/* Thin Tesla-like bar — transparent at top, solid on scroll */}
       <div
         className="relative z-20 mx-auto flex h-12 max-w-[1400px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8"
         onMouseLeave={scheduleClose}
@@ -141,7 +157,7 @@ export function PrototypeHeader() {
         aria-label={activeItem ? `${activeItem.label} menu` : "Navigation menu"}
         aria-hidden={!panelOpen}
         className={cn(
-          "relative z-20 hidden overflow-hidden border-t border-white/10 bg-[#0b0b0b] transition-[max-height,opacity] duration-300 ease-out md:block",
+          "relative z-20 hidden overflow-hidden border-t border-white/10 bg-[#141414] transition-[max-height,opacity] duration-300 ease-out md:block",
           panelOpen ? "max-h-[22rem] opacity-100" : "pointer-events-none max-h-0 opacity-0",
         )}
         onMouseEnter={clearCloseTimer}
@@ -164,7 +180,7 @@ export function PrototypeHeader() {
 
       {/* Mobile drawer */}
       {mobileOpen ? (
-        <div className="border-t border-white/10 bg-[#0b0b0b] px-4 pb-5 pt-2 md:hidden">
+        <div className="border-t border-white/10 bg-[#141414] px-4 pb-5 pt-2 md:hidden">
           <nav className="flex flex-col gap-0.5" aria-label="Mobile">
             {PROTO_NAV_PRIMARY.map(({ href, label }) => {
               const active = pathname === href || pathname.startsWith(`${href}/`);
