@@ -67,14 +67,14 @@ export function TitanMark({ className, size = "nav" }: TitanMarkProps) {
           "shrink-0 bg-transparent object-contain",
           isTrust
             ? trustIconClass
-            : "h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11 lg:h-12 lg:w-12",
+            : "h-7 w-7 sm:h-8 sm:w-8",
         )}
         priority={size === "nav"}
       />
       {isTrust ? (
         <span className={trustWordmarkClass}>Titan Imaging Service</span>
       ) : (
-        <span className="font-display text-[0.7rem] font-bold uppercase leading-none tracking-[0.14em] text-white min-[400px]:text-xs sm:text-sm sm:tracking-[0.16em] md:text-lg md:tracking-[0.18em] lg:text-xl lg:tracking-[0.2em]">
+        <span className="font-display text-[0.65rem] font-bold uppercase leading-none tracking-[0.14em] text-white min-[400px]:text-[0.7rem] sm:text-xs sm:tracking-[0.16em] md:text-sm md:tracking-[0.18em]">
           <span className="hidden min-[480px]:inline">Titan Imaging Service</span>
           <span className="min-[480px]:hidden">Titan</span>
         </span>

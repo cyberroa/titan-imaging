@@ -8,8 +8,8 @@ export const IMAGES = {
   geHealthcare: "/images/ge-healthcare-logo.png?v=8",
   geMonogram: "/images/ge-monogram.png",
   titanBanner: "/images/ge-omni-petct.jpg",
-  /** Layout prototype hero — larger generated banner */
-  prototypeHero: "/images/prototype-hero-banner.jpg",
+  /** Layout prototype hero — logo-free Gemini suite shot */
+  prototypeHero: "/images/prototype-hero-nologo.jpg",
   /** Capability carousel — Buy & sell slide */
   prototypeBuySell: "/images/prototype-buy-sell.jpg",
   scan: "/images/scan.png",

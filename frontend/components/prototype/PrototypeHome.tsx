@@ -12,20 +12,20 @@ import { IMAGES } from "@/lib/images";
 export function PrototypeHome() {
   return (
     <>
-      {/* Hero */}
-      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-5 pb-24 pt-28 text-center md:pb-32">
+      {/* Hero — full-bleed cover, no letterbox */}
+      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-black px-5 pb-24 pt-28 text-center md:pb-32">
         <div className="absolute inset-0 z-0">
           <Image
             src={IMAGES.prototypeHero}
             alt=""
             fill
-            className="object-cover object-center"
+            className="object-cover object-[center_45%]"
             priority
             sizes="100vw"
             quality={95}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/60 to-black" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(110,201,240,0.1),_transparent_55%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(110,201,240,0.08),_transparent_55%)]" />
         </div>
 
         <div className="relative z-10 mx-auto max-w-3xl">
