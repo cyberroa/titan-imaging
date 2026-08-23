@@ -80,7 +80,7 @@ function nearestCardIndex(scroller: HTMLElement, cards: (HTMLElement | null)[]) 
   return best;
 }
 
-export function CapabilityCarousel() {
+export function CapabilityCarousel({ edgeVignette = true }: { edgeVignette?: boolean }) {
   const [index, setIndex] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
@@ -305,14 +305,18 @@ export function CapabilityCarousel() {
           })}
         </div>
 
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[12%] bg-gradient-to-r from-black via-black/80 to-transparent sm:w-[16%] md:w-[18%]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[12%] bg-gradient-to-l from-black via-black/80 to-transparent sm:w-[16%] md:w-[18%]"
-          aria-hidden
-        />
+        {edgeVignette ? (
+          <>
+            <div
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[12%] bg-gradient-to-r from-black via-black/80 to-transparent sm:w-[16%] md:w-[18%]"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[12%] bg-gradient-to-l from-black via-black/80 to-transparent sm:w-[16%] md:w-[18%]"
+              aria-hidden
+            />
+          </>
+        ) : null}
       </div>
 
       <div className="mt-6 flex flex-col items-center gap-3 px-6">

@@ -24,11 +24,18 @@ type HomePageContentProps = {
 export function HomePageContent({ variant = "production" }: HomePageContentProps) {
   const isPreview = variant === "preview";
   const newsletterSource = isPreview ? "prototype_home" : "home";
+  /** Transparent on /prototype so Workbench grid shows; solid black on public /. */
+  const surface = isPreview ? "bg-transparent" : "bg-black";
 
   return (
     <>
       {/* Hero */}
-      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-black px-5 pb-44 pt-20 text-center md:pb-52 md:pt-24">
+      <section
+        className={cn(
+          "relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-5 pb-44 pt-20 text-center md:pb-52 md:pt-24",
+          surface,
+        )}
+      >
         <div className="absolute inset-0 z-0">
           <Image
             src={IMAGES.prototypeHero}
@@ -84,7 +91,7 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
       </section>
 
       {/* Trust strip */}
-      <section id="trust" className="relative bg-black">
+      <section id="trust" className={cn("relative", surface)}>
         <FadeRule />
         <div className="mx-auto max-w-6xl px-6 py-12 md:px-12 md:py-14">
           <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-text-muted">
@@ -109,13 +116,13 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
       </section>
 
       {/* Capabilities */}
-      <div className="bg-black">
-        <CapabilityCarousel />
+      <div className={surface}>
+        <CapabilityCarousel edgeVignette={!isPreview} />
       </div>
 
       {/* Industry experience — inset card image, rounded left corners, fade on right */}
       {!isPreview ? (
-        <section className="relative bg-black">
+        <section className={cn("relative", surface)}>
           <FadeRule />
           <div className="relative mx-auto max-w-6xl overflow-visible px-6 py-10 md:px-12 md:py-14 lg:py-16">
             <div className="grid items-center gap-10 overflow-visible md:grid-cols-2 md:gap-12 lg:gap-14">
@@ -167,7 +174,7 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
       ) : null}
 
       {/* Newsletter — between Industry Experience and Core Services FadeRules */}
-      <section className="relative overflow-hidden bg-black py-16 md:py-20">
+      <section className={cn("relative overflow-hidden py-16 md:py-20", surface)}>
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(110,201,240,0.07),_transparent_65%)]"
           aria-hidden
@@ -179,7 +186,7 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
 
       {/* Core services + credibility proof */}
       {!isPreview ? (
-        <section className="relative overflow-hidden bg-black py-20 md:py-28">
+        <section className={cn("relative overflow-hidden py-20 md:py-28", surface)}>
           <div
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(110,201,240,0.06),_transparent_65%)]"
             aria-hidden
@@ -239,7 +246,7 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
 
       {/* Parts search — preview only (production has search in hero) */}
       {isPreview ? (
-        <Section spacing="standard" className="relative bg-black pb-20 pt-4 md:pb-24">
+        <Section spacing="standard" className={cn("relative pb-20 pt-4 md:pb-24", surface)}>
           <FadeRule />
           <div className="mx-auto max-w-3xl px-6 pt-16 text-center md:px-12 md:pt-20">
             <Eyebrow className="text-accent-ice">Parts inventory</Eyebrow>
@@ -252,10 +259,10 @@ export function HomePageContent({ variant = "production" }: HomePageContentProps
         </Section>
       ) : null}
 
-      <InsightsCarousel />
+      <InsightsCarousel surfaceClassName={surface} edgeVignette={!isPreview} />
 
       {/* Closing CTA */}
-      <section className="relative overflow-hidden bg-black py-20 md:py-28">
+      <section className={cn("relative overflow-hidden py-20 md:py-28", surface)}>
         <FadeRule />
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_rgba(110,201,240,0.08),_transparent_55%)]"

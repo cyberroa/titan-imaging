@@ -72,7 +72,13 @@ function nearestCardIndex(scroller: HTMLElement, cards: (HTMLElement | null)[]) 
 }
 
 /** Compact article reel — A ↔ B ↔ C, no wrap; easy to grow as posts are added. */
-export function InsightsCarousel() {
+export function InsightsCarousel({
+  surfaceClassName = "bg-black",
+  edgeVignette = true,
+}: {
+  surfaceClassName?: string;
+  edgeVignette?: boolean;
+}) {
   const [index, setIndex] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
@@ -166,7 +172,7 @@ export function InsightsCarousel() {
     );
 
   return (
-    <section className="relative overflow-hidden bg-black py-16 md:py-20" aria-roledescription="carousel">
+    <section className={cn("relative overflow-hidden py-16 md:py-20", surfaceClassName)} aria-roledescription="carousel">
       <FadeRule />
 
       <div className="relative mx-auto max-w-7xl px-6 pt-12 md:px-12 md:pt-14">
@@ -277,14 +283,18 @@ export function InsightsCarousel() {
           })}
         </div>
 
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[10%] bg-gradient-to-r from-black via-black/80 to-transparent sm:w-[14%] md:w-[16%]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[10%] bg-gradient-to-l from-black via-black/80 to-transparent sm:w-[14%] md:w-[16%]"
-          aria-hidden
-        />
+        {edgeVignette ? (
+          <>
+            <div
+              className="pointer-events-none absolute inset-y-0 left-0 z-10 w-[10%] bg-gradient-to-r from-black via-black/80 to-transparent sm:w-[14%] md:w-[16%]"
+              aria-hidden
+            />
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 z-10 w-[10%] bg-gradient-to-l from-black via-black/80 to-transparent sm:w-[14%] md:w-[16%]"
+              aria-hidden
+            />
+          </>
+        ) : null}
       </div>
 
       <div className="mt-5 flex justify-center gap-2 px-6" role="tablist" aria-label="Insight articles">
