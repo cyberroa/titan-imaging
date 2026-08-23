@@ -217,6 +217,9 @@ Alt text: decorative hero backgrounds use `alt=""`; content images need descript
 ## Admin UI
 
 - Shell: `AdminShell` wraps all routes with `data-area="admin"` + `AdminNav`; **McLaren papaya accent** (`accent-admin`, `#FF8700`) distinguishes backend from public ice theme. Charcoal shell (`#101014`) with soft papaya atmosphere + light grid; not pure black.
+- **Nav:** grouped dropdowns from [`frontend/lib/admin-nav.ts`](frontend/lib/admin-nav.ts) — AI · CRM · Marketing · Sales & Pay · Inventory (hover/click panels on desktop; accordion on mobile). Do not add flat link lists to the header.
+- **AI Studio** (`/workbench`): Stitch-inspired centered composer — large prompt shell, pill model menu, Text/Image mode, suggestion chips; keep **papaya** accent (not purple gradients).
+- **Design.md presets:** Composer palette menu loads marketing design presets from [`frontend/lib/design-presets.ts`](frontend/lib/design-presets.ts) (condensed Design.md system prompts: Titan Imaging, Public Ice, Email Campaign, LinkedIn Social, Hero / Landing).
 - **Shared classes:** [`frontend/lib/admin-ui.ts`](frontend/lib/admin-ui.ts) — `adminBtnPrimary`, `adminCard`, `adminLink`, `adminMono`, etc.
 - **Buttons:** prefer `Button` / `LinkButton` with `variant="admin"` or `variant="adminOutline"` from `@/components/ui`.
 - **Page headers:** `AdminPageHeader` with `tone="admin"` eyebrow.
