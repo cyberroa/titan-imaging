@@ -103,6 +103,11 @@ def create_prompt(
         raise HTTPException(status_code=400, detail="name required")
     slug = (body.get("slug") or name).strip().lower()
     slug = re.sub(r"[^a-z0-9]+", "-", slug).strip("-")[:200]
+    base_slug = slug
+    n = 2
+    while db.scalar(select(AiPromptPreset).where(AiPromptPreset.slug == slug)) is not None:
+        slug = f"{base_slug[:190]}-{n}"
+        n += 1
     row = AiPromptPreset(
         id=uuid.uuid4(),
         name=name,

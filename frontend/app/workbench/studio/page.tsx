@@ -118,6 +118,18 @@ function IconDoc({ className }: { className?: string }) {
   );
 }
 
+function IconBookmark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 4.5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1V19l-6-3.5L6 19V4.5Z"
+      />
+    </svg>
+  );
+}
+
 export default function AdminAiStudioPage() {
   const [token, setToken] = useState<string | null>(null);
   const [status, setStatus] = useState<AiStatus | null>(null);
@@ -135,12 +147,19 @@ export default function AdminAiStudioPage() {
   const [mode, setMode] = useState<Mode>("text");
   const [modelOpen, setModelOpen] = useState(false);
   const [designOpen, setDesignOpen] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
+  const [savePresetOpen, setSavePresetOpen] = useState(false);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
+  const [savePresetName, setSavePresetName] = useState("");
+  const [savePresetCategory, setSavePresetCategory] = useState("general");
   const [designPresetId, setDesignPresetId] = useState<string | null>(null);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const modelMenuId = useId();
   const designMenuId = useId();
+  const presetsMenuId = useId();
   const modelRef = useRef<HTMLDivElement>(null);
   const designRef = useRef<HTMLDivElement>(null);
+  const presetsRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async (t: string) => {
@@ -168,7 +187,7 @@ export default function AdminAiStudioPage() {
   }, [load]);
 
   useEffect(() => {
-    if (!modelOpen && !designOpen) return;
+    if (!modelOpen && !designOpen && !presetsOpen) return;
     const onDoc = (e: MouseEvent) => {
       const t = e.target as Node;
       if (modelOpen && modelRef.current && !modelRef.current.contains(t)) {
@@ -177,11 +196,17 @@ export default function AdminAiStudioPage() {
       if (designOpen && designRef.current && !designRef.current.contains(t)) {
         setDesignOpen(false);
       }
+      if (presetsOpen && presetsRef.current && !presetsRef.current.contains(t)) {
+        setPresetsOpen(false);
+        setSavePresetOpen(false);
+      }
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setModelOpen(false);
         setDesignOpen(false);
+        setPresetsOpen(false);
+        setSavePresetOpen(false);
       }
     };
     document.addEventListener("mousedown", onDoc);
@@ -190,7 +215,7 @@ export default function AdminAiStudioPage() {
       document.removeEventListener("mousedown", onDoc);
       window.removeEventListener("keydown", onKey);
     };
-  }, [modelOpen, designOpen]);
+  }, [modelOpen, designOpen, presetsOpen]);
 
   async function seedPresets() {
     if (!token) return;
@@ -198,11 +223,74 @@ export default function AdminAiStudioPage() {
     await load(token);
   }
 
+  function openSavePresetForm() {
+    const active = presets.find((p) => p.id === activePresetId);
+    setSavePresetName(active?.name ?? (promoteName.trim() || "My prompt"));
+    setSavePresetCategory(active?.category ?? "general");
+    setSavePresetOpen(true);
+  }
+
+  async function saveCurrentPreset(asNew: boolean) {
+    if (!token) return;
+    const name = savePresetName.trim();
+    if (!name) {
+      setError("Preset name is required");
+      return;
+    }
+    if (!userPrompt.trim() && !systemPrompt.trim()) {
+      setError("Add a user or system prompt before saving");
+      return;
+    }
+    setError(null);
+    try {
+      if (activePresetId && !asNew) {
+        await apiFetchWithAuth(`/api/v1/workbench/ai/prompts/${activePresetId}`, token, {
+          method: "PATCH",
+          body: JSON.stringify({
+            name,
+            category: savePresetCategory,
+            system_prompt: systemPrompt,
+            user_prompt_template: userPrompt,
+          }),
+        });
+      } else {
+        const res = await apiFetchWithAuth<{ id: string }>("/api/v1/workbench/ai/prompts", token, {
+          method: "POST",
+          body: JSON.stringify({
+            name,
+            category: savePresetCategory,
+            system_prompt: systemPrompt,
+            user_prompt_template: userPrompt,
+          }),
+        });
+        setActivePresetId(res.id);
+      }
+      setSavePresetOpen(false);
+      setPresetsOpen(false);
+      await load(token);
+    } catch (e) {
+      setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Save failed");
+    }
+  }
+
+  async function deletePreset(id: string) {
+    if (!token || !confirm("Delete this saved prompt?")) return;
+    try {
+      await apiFetchWithAuth(`/api/v1/workbench/ai/prompts/${id}`, token, { method: "DELETE" });
+      if (activePresetId === id) setActivePresetId(null);
+      await load(token);
+    } catch (e) {
+      setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Delete failed");
+    }
+  }
+
   function applyPreset(p: Preset) {
+    setActivePresetId(p.id);
     setSystemPrompt(p.system_prompt);
     setUserPrompt(p.user_prompt_template);
     setShowSystem(Boolean(p.system_prompt?.trim()));
     setDesignPresetId(null);
+    setPresetsOpen(false);
     textareaRef.current?.focus();
   }
 
@@ -232,6 +320,7 @@ export default function AdminAiStudioPage() {
     setImageUrl(null);
     setShowSystem(false);
     setDesignPresetId(null);
+    setActivePresetId(null);
     setPromoteName("AI Draft");
     textareaRef.current?.focus();
   }
@@ -297,9 +386,11 @@ export default function AdminAiStudioPage() {
     (mode === "text" ? Boolean(ready) : Boolean(status?.gemini_configured));
   const activeDesign = getDesignPreset(designPresetId);
 
+  const activePreset = presets.find((p) => p.id === activePresetId) ?? null;
+
   const chipSuggestions =
     presets.length > 0
-      ? presets.slice(0, 4).map((p) => ({ key: p.id, label: p.name, onClick: () => applyPreset(p) }))
+      ? presets.slice(0, 6).map((p) => ({ key: p.id, label: p.name, onClick: () => applyPreset(p) }))
       : SUGGESTIONS.map((s, i) => ({
           key: `s-${i}`,
           label: s,
@@ -382,6 +473,10 @@ export default function AdminAiStudioPage() {
                       <span className="ml-2 font-medium normal-case tracking-normal text-accent-admin">
                         · {activeDesign.name}
                       </span>
+                    ) : activePreset ? (
+                      <span className="ml-2 font-medium normal-case tracking-normal text-accent-admin">
+                        · {activePreset.name}
+                      </span>
                     ) : null}
                   </label>
                   <textarea
@@ -389,6 +484,7 @@ export default function AdminAiStudioPage() {
                     onChange={(e) => {
                       setSystemPrompt(e.target.value);
                       setDesignPresetId(null);
+                      setActivePresetId(null);
                     }}
                     rows={3}
                     placeholder="Optional system instructions…"
@@ -401,7 +497,10 @@ export default function AdminAiStudioPage() {
                 <textarea
                   ref={textareaRef}
                   value={userPrompt}
-                  onChange={(e) => setUserPrompt(e.target.value)}
+                  onChange={(e) => {
+                    setUserPrompt(e.target.value);
+                    setActivePresetId(null);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                       e.preventDefault();
@@ -466,6 +565,155 @@ export default function AdminAiStudioPage() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  <div className="relative" ref={presetsRef}>
+                    <button
+                      type="button"
+                      aria-expanded={presetsOpen}
+                      aria-controls={presetsMenuId}
+                      title="Saved prompts"
+                      onClick={() => {
+                        setPresetsOpen((v) => !v);
+                        setModelOpen(false);
+                        setDesignOpen(false);
+                      }}
+                      className={cn(
+                        "inline-flex h-9 w-9 items-center justify-center rounded-full border transition",
+                        activePresetId || presetsOpen
+                          ? "border-accent-admin/50 bg-accent-admin/15 text-accent-admin"
+                          : "border-white/10 bg-black/20 text-white/80 hover:bg-black/35 hover:text-white",
+                      )}
+                    >
+                      <IconBookmark className="h-4 w-4" />
+                    </button>
+                    {presetsOpen && (
+                      <div
+                        id={presetsMenuId}
+                        role="dialog"
+                        aria-label="Saved prompts"
+                        className="absolute bottom-full right-0 z-30 mb-2 w-80 overflow-hidden rounded-2xl border border-white/10 bg-[#1e1e24] shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
+                      >
+                        <div className="border-b border-white/8 px-4 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <IconBookmark className="h-4 w-4 text-accent-admin" />
+                            <span className="text-sm font-semibold tracking-wide text-white">
+                              Saved prompts
+                            </span>
+                          </div>
+                          <p className="mt-1.5 text-xs leading-relaxed text-white/50">
+                            Load a saved system + user prompt, or save what you have in the composer.
+                          </p>
+                          {!savePresetOpen ? (
+                            <button
+                              type="button"
+                              onClick={openSavePresetForm}
+                              className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/[0.06] px-3 py-2 text-sm font-medium text-white transition hover:bg-white/[0.1]"
+                            >
+                              <IconPlus className="h-3.5 w-3.5" />
+                              Save current prompt
+                            </button>
+                          ) : (
+                            <div className="mt-3 space-y-2">
+                              <input
+                                value={savePresetName}
+                                onChange={(e) => setSavePresetName(e.target.value)}
+                                placeholder="Preset name"
+                                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none"
+                              />
+                              <select
+                                value={savePresetCategory}
+                                onChange={(e) => setSavePresetCategory(e.target.value)}
+                                className="w-full rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none"
+                              >
+                                <option value="general">General</option>
+                                <option value="email">Email</option>
+                                <option value="social">Social</option>
+                                <option value="outreach">Outreach</option>
+                              </select>
+                              <div className="flex flex-wrap gap-2">
+                                {activePresetId ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => void saveCurrentPreset(false)}
+                                      className="flex-1 rounded-full bg-accent-admin px-3 py-2 text-sm font-semibold text-black"
+                                    >
+                                      Update
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void saveCurrentPreset(true)}
+                                      className="flex-1 rounded-full border border-white/15 px-3 py-2 text-sm text-white"
+                                    >
+                                      Save as new
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => void saveCurrentPreset(true)}
+                                    className="w-full rounded-full bg-accent-admin px-3 py-2 text-sm font-semibold text-black"
+                                  >
+                                    Save
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => setSavePresetOpen(false)}
+                                  className="w-full text-xs text-white/45 hover:text-white/70"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="max-h-64 overflow-y-auto px-2 py-2">
+                          {presets.length === 0 ? (
+                            <p className="px-2.5 py-3 text-xs text-white/45">
+                              No saved prompts yet. Use <strong>Seed presets</strong> for starters,
+                              or save your own.
+                            </p>
+                          ) : (
+                            presets.map((p) => {
+                              const selected = p.id === activePresetId;
+                              return (
+                                <div
+                                  key={p.id}
+                                  className={cn(
+                                    "flex items-start gap-1 rounded-xl px-1 py-1 transition hover:bg-white/5",
+                                    selected && "bg-white/[0.06]",
+                                  )}
+                                >
+                                  <button
+                                    type="button"
+                                    onClick={() => applyPreset(p)}
+                                    className="min-w-0 flex-1 px-1.5 py-1.5 text-left"
+                                  >
+                                    <span className="block text-sm font-semibold text-white">
+                                      {p.name}
+                                    </span>
+                                    <span className="mt-0.5 block truncate text-xs text-white/45">
+                                      {p.category} · {p.user_prompt_template.slice(0, 60)}
+                                      {p.user_prompt_template.length > 60 ? "…" : ""}
+                                    </span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title="Delete"
+                                    onClick={() => void deletePreset(p.id)}
+                                    className="shrink-0 rounded-lg px-2 py-2 text-xs text-white/35 hover:bg-white/5 hover:text-red-300"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="relative" ref={designRef}>
                     <button
                       type="button"
