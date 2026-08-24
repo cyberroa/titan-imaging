@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { WorkbenchPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth, apiUploadWithAuth } from '@/lib/api-workbench';
@@ -49,6 +49,14 @@ const emptyForm = {
 };
 
 export default function AdminCustomersPage() {
+  return (
+    <Suspense fallback={<p className="mt-10 text-text-muted">Loading customers…</p>}>
+      <CustomersPageInner />
+    </Suspense>
+  );
+}
+
+function CustomersPageInner() {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") ?? "";
   const [token, setToken] = useState<string | null>(null);
