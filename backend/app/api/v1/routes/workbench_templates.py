@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_workbench_user
 from app.db import get_db
 from app.models import EmailTemplate, Segment
+from app.customer_search import search_segments
 from app.schemas import (
     OkOut,
     SegmentCreate,
+    SegmentListItemOut,
+    SegmentListOut,
     SegmentOut,
     SegmentPreviewOut,
     SegmentUpdate,
@@ -164,10 +167,28 @@ def _segment_to_out(s: Segment) -> SegmentOut:
     )
 
 
-@router.get("/segments", response_model=list[SegmentOut])
-def list_segments(db: Session = Depends(get_db)):
-    rows = db.execute(select(Segment).order_by(Segment.name.asc())).scalars().all()
-    return [_segment_to_out(s) for s in rows]
+@router.get("/segments", response_model=SegmentListOut)
+def list_segments(
+    search: str | None = Query(default=None),
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+):
+    rows, total = search_segments(db, search, limit=limit, offset=offset)
+    items = [
+        SegmentListItemOut(
+            **_segment_to_out(s).model_dump(),
+            member_count=segment_count(db, s.filter_json),
+        )
+        for s in rows
+    ]
+    return SegmentListOut(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=offset + len(items) < total,
+    )
 
 
 @router.post("/segments", response_model=SegmentOut)
@@ -232,7 +253,7 @@ def delete_segment(segment_id: str, db: Session = Depends(get_db)):
 
 @router.post("/segments/{segment_id}/preview", response_model=SegmentPreviewOut)
 def preview_segment(segment_id: str, db: Session = Depends(get_db)):
-    from app.api.v1.routes.admin_customers import _customer_to_out
+    from app.api.v1.routes.workbench_customers import customer_to_out
 
     s = db.get(Segment, segment_id)
     if not s:
@@ -240,5 +261,5 @@ def preview_segment(segment_id: str, db: Session = Depends(get_db)):
     total = segment_count(db, s.filter_json)
     sample_rows = segment_customers(db, s.filter_json, limit=25)
     return SegmentPreviewOut(
-        count=total, sample=[_customer_to_out(c) for c in sample_rows]
+        count=total, sample=[customer_to_out(c) for c in sample_rows]
     )

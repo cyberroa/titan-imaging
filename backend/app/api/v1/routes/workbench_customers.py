@@ -16,13 +16,16 @@ from app.ai.jobs import enqueue_import_profile_enrichment
 from app.ai.client import AiDisabledError, AiError, ai_is_ready, resolve_model
 from app.ai.opportunities import customer_latest_opportunities
 from app.auth import get_current_workbench_user
+from app.customer_search import search_customers
+from app.customer_utils import normalize_website, refresh_customer_search_document
 from app.db import get_db
-from app.models import Campaign, CampaignRecipient, ContactSubmission, Customer, Event, SellSubmission
+from app.models import Campaign, CampaignRecipient, ContactSubmission, Customer, Event, Segment, SellSubmission
 from app.schemas import (
     AiStatusOut,
     CustomerBriefingOut,
     CustomerCreate,
     CustomerImportResult,
+    CustomerListOut,
     CustomerOut,
     CustomerTimelineOut,
     CustomerUpdate,
@@ -35,7 +38,7 @@ from app.settings import get_settings
 router = APIRouter(prefix="/workbench/customers", dependencies=[Depends(get_current_workbench_user)])
 
 
-def _customer_to_out(c: Customer) -> CustomerOut:
+def customer_to_out(c: Customer) -> CustomerOut:
     return CustomerOut(
         id=str(c.id),
         email=c.email,
@@ -43,6 +46,7 @@ def _customer_to_out(c: Customer) -> CustomerOut:
         company=c.company,
         phone=c.phone,
         role=c.role,
+        website=c.website,
         tags=list(c.tags or []),
         source=c.source,
         notes=c.notes,
@@ -54,29 +58,42 @@ def _customer_to_out(c: Customer) -> CustomerOut:
     )
 
 
-@router.get("", response_model=list[CustomerOut])
+def _customer_to_out(c: Customer) -> CustomerOut:
+    return customer_to_out(c)
+
+
+@router.get("", response_model=CustomerListOut)
 def list_customers(
     search: str | None = Query(default=None),
     tag: str | None = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=500),
+    segment_id: str | None = Query(default=None),
+    limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ):
-    q = select(Customer)
-    if search and search.strip():
-        like = f"%{search.strip()}%"
-        q = q.where(
-            or_(
-                Customer.email.ilike(like),
-                Customer.name.ilike(like),
-                Customer.company.ilike(like),
-            )
-        )
-    if tag:
-        q = q.where(Customer.tags.any(tag))
-    q = q.order_by(Customer.created_at.desc()).offset(offset).limit(limit)
-    rows = db.execute(q).scalars().all()
-    return [_customer_to_out(c) for c in rows]
+    segment_filter: dict[str, Any] | None = None
+    if segment_id:
+        seg = db.get(Segment, segment_id)
+        if not seg:
+            raise HTTPException(status_code=404, detail="Segment not found")
+        segment_filter = dict(seg.filter_json or {})
+
+    rows, total = search_customers(
+        db,
+        search,
+        segment_filter_json=segment_filter,
+        tag=tag,
+        limit=limit,
+        offset=offset,
+    )
+    items = [_customer_to_out(c) for c in rows]
+    return CustomerListOut(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=offset + len(items) < total,
+    )
 
 
 @router.get("/ai/status", response_model=AiStatusOut)
@@ -103,6 +120,7 @@ def create_customer(body: CustomerCreate, db: Session = Depends(get_db)):
         company=body.company,
         phone=body.phone,
         role=body.role,
+        website=normalize_website(body.website),
         tags=body.tags or [],
         source=body.source,
         notes=body.notes,
@@ -110,6 +128,7 @@ def create_customer(body: CustomerCreate, db: Session = Depends(get_db)):
         consent_source=body.consent_source,
         consent_at=dt.datetime.now(dt.timezone.utc) if body.consent_marketing else None,
     )
+    refresh_customer_search_document(c)
     db.add(c)
     db.commit()
     db.refresh(c)
@@ -141,6 +160,8 @@ def update_customer(customer_id: str, body: CustomerUpdate, db: Session = Depend
         v = getattr(body, field)
         if v is not None:
             setattr(c, field, v)
+    if body.website is not None:
+        c.website = normalize_website(body.website)
     if body.tags is not None:
         c.tags = body.tags
     if body.consent_marketing is not None:
@@ -148,6 +169,7 @@ def update_customer(customer_id: str, body: CustomerUpdate, db: Session = Depend
         c.consent_marketing = body.consent_marketing
         if body.consent_marketing and not previous:
             c.consent_at = dt.datetime.now(dt.timezone.utc)
+    refresh_customer_search_document(c)
     db.commit()
     db.refresh(c)
     return _customer_to_out(c)
@@ -352,6 +374,7 @@ EXPECTED_HEADERS = (
     "company",
     "phone",
     "role",
+    "website",
     "tags",
     "source",
     "notes",
@@ -462,6 +485,7 @@ async def import_customers(
             existing.company = (row.get("company") or "").strip() or existing.company
             existing.phone = (row.get("phone") or "").strip() or existing.phone
             existing.role = (row.get("role") or "").strip() or existing.role
+            existing.website = normalize_website((row.get("website") or "").strip()) or existing.website
             existing.source = (row.get("source") or "").strip() or existing.source
             existing.notes = (row.get("notes") or "").strip() or existing.notes
             if tags:
@@ -470,6 +494,7 @@ async def import_customers(
                 existing.consent_marketing = True
                 existing.consent_source = "import"
                 existing.consent_at = now
+            refresh_customer_search_document(existing)
             db.commit()
             result.updated += 1
             enriched_ids.append(existing.id)
@@ -481,6 +506,7 @@ async def import_customers(
                 company=(row.get("company") or "").strip() or None,
                 phone=(row.get("phone") or "").strip() or None,
                 role=(row.get("role") or "").strip() or None,
+                website=normalize_website((row.get("website") or "").strip()),
                 tags=tags,
                 source=(row.get("source") or "import").strip() or "import",
                 notes=(row.get("notes") or "").strip() or None,
@@ -488,6 +514,7 @@ async def import_customers(
                 consent_source="import" if consent else None,
                 consent_at=now if consent else None,
             )
+            refresh_customer_search_document(c)
             db.add(c)
             db.commit()
             result.created += 1

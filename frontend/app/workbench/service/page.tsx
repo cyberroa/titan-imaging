@@ -55,11 +55,11 @@ export default function AdminServicePage() {
 
   const load = useCallback(async (t: string) => {
     const [c, j, s] = await Promise.all([
-      apiFetchWithAuth<Customer[]>("/api/v1/workbench/customers?limit=200", t),
+      apiFetchWithAuth<{ items: Customer[] }>("/api/v1/workbench/customers?limit=100", t),
       apiFetchWithAuth<ServiceJob[]>("/api/v1/workbench/service-jobs?limit=50", t),
       apiFetchWithAuth<ServiceJob[]>("/api/v1/workbench/service-jobs?status=scheduled&job_type=audit", t),
     ]);
-    setCustomers(c);
+    setCustomers(c.items);
     setJobs(j.filter((x) => x.status !== "scheduled"));
     setScheduled(s);
   }, []);

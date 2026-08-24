@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class CategoryOut(BaseModel):
@@ -90,15 +91,58 @@ class InventoryAlertSubscribeIn(BaseModel):
 
 
 class OutreachSendIn(BaseModel):
-    recipients: list[EmailStr] = Field(min_length=1, max_length=200)
+    customer_ids: list[UUID] = Field(default_factory=list, max_length=500)
+    segment_ids: list[UUID] = Field(default_factory=list, max_length=50)
+    recipients: list[EmailStr] = Field(default_factory=list, max_length=500)
+    template_id: UUID | None = None
     subject: str = Field(min_length=1, max_length=200)
-    body: str = Field(min_length=1, max_length=20_000)
+    body_md: str = Field(min_length=1, max_length=20_000)
+    body_html: str | None = Field(default=None, max_length=100_000)
+    body: str | None = Field(default=None, max_length=20_000)
+
+    @model_validator(mode="before")
+    @classmethod
+    def body_alias(cls, data: Any) -> Any:
+        if isinstance(data, dict) and data.get("body") and not data.get("body_md"):
+            data = {**data, "body_md": data["body"]}
+        return data
+
+    @model_validator(mode="after")
+    def require_audience(self) -> OutreachSendIn:
+        if not self.customer_ids and not self.segment_ids and not self.recipients:
+            raise ValueError("At least one of customer_ids, segment_ids, or recipients is required")
+        return self
+
+
+class OutreachPreviewIn(BaseModel):
+    customer_ids: list[UUID] = Field(default_factory=list, max_length=500)
+    segment_ids: list[UUID] = Field(default_factory=list, max_length=50)
+    recipients: list[EmailStr] = Field(default_factory=list, max_length=500)
+    subject: str = Field(min_length=1, max_length=200)
+    body_md: str = Field(min_length=1, max_length=20_000)
+    body_html: str | None = Field(default=None, max_length=100_000)
+
+    @model_validator(mode="after")
+    def require_audience(self) -> OutreachPreviewIn:
+        if not self.customer_ids and not self.segment_ids and not self.recipients:
+            raise ValueError("At least one of customer_ids, segment_ids, or recipients is required")
+        return self
+
+
+class OutreachPreviewOut(BaseModel):
+    recipient_count: int
+    sample_email: str
+    sample_name: str | None = None
+    subject: str
+    html: str
+    text: str
 
 
 class OutreachSendOut(BaseModel):
     sent: int
     skipped_suppressed: int = 0
     failed: int = 0
+    audience_total: int = 0
 
 
 # --------------------------------------------------------------------------
@@ -112,6 +156,7 @@ class CustomerBase(BaseModel):
     company: str | None = Field(default=None, max_length=200)
     phone: str | None = Field(default=None, max_length=40)
     role: str | None = Field(default=None, max_length=120)
+    website: str | None = Field(default=None, max_length=500)
     tags: list[str] = Field(default_factory=list)
     source: str | None = Field(default=None, max_length=80)
     notes: str | None = Field(default=None, max_length=20_000)
@@ -129,6 +174,7 @@ class CustomerUpdate(BaseModel):
     company: str | None = Field(default=None, max_length=200)
     phone: str | None = Field(default=None, max_length=40)
     role: str | None = Field(default=None, max_length=120)
+    website: str | None = Field(default=None, max_length=500)
     tags: list[str] | None = None
     source: str | None = Field(default=None, max_length=80)
     notes: str | None = Field(default=None, max_length=20_000)
@@ -143,6 +189,7 @@ class CustomerOut(BaseModel):
     company: str | None = None
     phone: str | None = None
     role: str | None = None
+    website: str | None = None
     tags: list[str] = Field(default_factory=list)
     source: str | None = None
     notes: str | None = None
@@ -151,6 +198,14 @@ class CustomerOut(BaseModel):
     consent_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class CustomerListOut(BaseModel):
+    items: list[CustomerOut]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
 
 
 class CustomerImportResult(BaseModel):
@@ -187,6 +242,18 @@ class SegmentOut(BaseModel):
     ai_managed: bool = False
     ai_proposal_status: str | None = None
     ai_rationale: str | None = None
+
+
+class SegmentListItemOut(SegmentOut):
+    member_count: int = 0
+
+
+class SegmentListOut(BaseModel):
+    items: list[SegmentListItemOut]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
 
 
 class SegmentPreviewOut(BaseModel):

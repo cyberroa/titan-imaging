@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { WorkbenchPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
@@ -14,12 +15,18 @@ type Customer = {
   company: string | null;
   phone: string | null;
   role: string | null;
+  website: string | null;
   tags: string[];
   source: string | null;
   notes: string | null;
   consent_marketing: boolean;
   consent_source: string | null;
   created_at: string;
+};
+
+type CustomerListResponse = {
+  items: Customer[];
+  total: number;
 };
 
 type ImportResult = {
@@ -34,6 +41,7 @@ const emptyForm = {
   company: "",
   phone: "",
   role: "",
+  website: "",
   tags: "",
   source: "",
   notes: "",
@@ -41,11 +49,13 @@ const emptyForm = {
 };
 
 export default function AdminCustomersPage() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") ?? "";
   const [token, setToken] = useState<string | null>(null);
   const [rows, setRows] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
   const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState<File | null>(null);
   const [dryRun, setDryRun] = useState(true);
@@ -57,10 +67,10 @@ export default function AdminCustomersPage() {
       setError(null);
       try {
         const path = q
-          ? `/api/v1/workbench/customers?search=${encodeURIComponent(q)}&limit=200`
-          : "/api/v1/workbench/customers?limit=200";
-        const r = await apiFetchWithAuth<Customer[]>(path, t);
-        setRows(r);
+          ? `/api/v1/workbench/customers?search=${encodeURIComponent(q)}&limit=100`
+          : "/api/v1/workbench/customers?limit=100";
+        const r = await apiFetchWithAuth<CustomerListResponse>(path, t);
+        setRows(r.items);
       } catch (e) {
         setError(
           e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Failed to load",
@@ -76,10 +86,12 @@ export default function AdminCustomersPage() {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       setToken(session?.access_token ?? null);
-      if (session?.access_token) void load(session.access_token);
-      else setLoading(false);
+      if (session?.access_token) {
+        const q = initialSearch.trim() || undefined;
+        void load(session.access_token, q);
+      } else setLoading(false);
     });
-  }, [load]);
+  }, [load, initialSearch]);
 
   async function saveCustomer(e: React.FormEvent) {
     e.preventDefault();
@@ -91,6 +103,7 @@ export default function AdminCustomersPage() {
       company: form.company.trim() || null,
       phone: form.phone.trim() || null,
       role: form.role.trim() || null,
+      website: form.website.trim() || null,
       tags: form.tags
         .split(",")
         .map((t) => t.trim())
@@ -204,6 +217,15 @@ export default function AdminCustomersPage() {
               />
             </label>
             <label className="block text-sm">
+              <span className="text-text-muted">Website</span>
+              <input
+                className="mt-1 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
+                value={form.website}
+                onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+                placeholder="https://example.com"
+              />
+            </label>
+            <label className="block text-sm">
               <span className="text-text-muted">Source</span>
               <input
                 className="mt-1 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
@@ -253,7 +275,7 @@ export default function AdminCustomersPage() {
         <div className="rounded-xl border border-white/10 bg-background-card p-6">
           <h2 className="text-lg font-semibold">Bulk import (.csv / .xlsx)</h2>
           <p className="mt-2 text-sm text-text-muted">
-            Columns: email, name, company, phone, role, tags, source, notes, consent_marketing.
+            Columns: email, name, company, phone, role, website, tags, source, notes, consent_marketing.
             Upsert by email.
           </p>
           <form onSubmit={(e) => void runImport(e)} className="mt-4 space-y-3 text-sm">
@@ -358,7 +380,9 @@ export default function AdminCustomersPage() {
                     </Link>
                   </td>
                   <td className="px-4 py-3">{c.name ?? "—"}</td>
-                  <td className="px-4 py-3 text-text-muted">{c.company ?? "—"}</td>
+                  <td className="px-4 py-3 text-text-muted">
+                    {[c.company, c.website].filter(Boolean).join(" · ") || "—"}
+                  </td>
                   <td className="px-4 py-3 text-text-muted">
                     {c.tags.length ? c.tags.join(", ") : "—"}
                   </td>

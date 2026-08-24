@@ -27,10 +27,10 @@ export default function AdminSalesPage() {
 
   const load = useCallback(async (t: string) => {
     const [c, conv] = await Promise.all([
-      apiFetchWithAuth<Customer[]>("/api/v1/workbench/customers?limit=200", t),
+      apiFetchWithAuth<{ items: Customer[] }>("/api/v1/workbench/customers?limit=100", t),
       apiFetchWithAuth<Conversion[]>("/api/v1/workbench/sales/conversions", t),
     ]);
-    setCustomers(c);
+    setCustomers(c.items);
     setRows(conv);
   }, []);
 

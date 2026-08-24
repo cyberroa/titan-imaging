@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth import WorkbenchUser, get_current_workbench_user
+from app.customer_utils import customer_template_variables, manual_recipient_variables
 from app.db import get_db
 from app.email import send_campaign_email
 from app.models import (
@@ -289,11 +290,11 @@ async def send_campaign(
     now = dt.datetime.now(dt.timezone.utc)
     for i, r in enumerate(pending):
         try:
-            variables = {
-                "email": r.email,
-                "name": (r.customer.name if r.customer and r.customer.name else r.email),
-                "company": (r.customer.company if r.customer else None),
-            }
+            variables = (
+                customer_template_variables(r.customer)
+                if r.customer
+                else manual_recipient_variables(r.email)
+            )
             subject, html_out, text_out = template_to_text_html(
                 tpl.subject, tpl.body_md, tpl.body_html, variables
             )

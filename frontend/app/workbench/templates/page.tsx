@@ -154,8 +154,11 @@ export default function AdminTemplatesPage() {
         title="Templates"
         description={
           <>
-            Reusable email templates for campaigns. Use <code>{`{{ name }}`}</code>,{" "}
-            <code>{`{{ company }}`}</code>, <code>{`{{ email }}`}</code> placeholders.
+            Reusable email templates for campaigns. Use{" "}
+            <code>{`{{ name }}`}</code>, <code>{`{{ first_name }}`}</code>,{" "}
+            <code>{`{{ company }}`}</code>, <code>{`{{ email }}`}</code>,{" "}
+            <code>{`{{ phone }}`}</code>, <code>{`{{ role }}`}</code>,{" "}
+            <code>{`{{ website }}`}</code> placeholders.
           </>
         }
       />

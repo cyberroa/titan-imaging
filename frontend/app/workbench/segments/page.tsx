@@ -50,8 +50,11 @@ export default function AdminSegmentsPage() {
     setLoading(true);
     setError(null);
     try {
-      const r = await apiFetchWithAuth<Segment[]>("/api/v1/workbench/segments", t);
-      setRows(r);
+      const r = await apiFetchWithAuth<{ items: Segment[] }>(
+        "/api/v1/workbench/segments?limit=100",
+        t,
+      );
+      setRows(r.items);
     } catch (e) {
       setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Failed to load");
     } finally {

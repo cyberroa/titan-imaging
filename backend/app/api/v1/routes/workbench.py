@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import uuid
@@ -23,6 +24,8 @@ from app.schemas import (
     ImportResult,
     ImportRowError,
     OkOut,
+    OutreachPreviewIn,
+    OutreachPreviewOut,
     OutreachSendIn,
     OutreachSendOut,
     PartCreate,
@@ -31,6 +34,9 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/workbench", dependencies=[Depends(get_current_workbench_user)])
+
+SEND_BATCH_SIZE = 25
+SEND_BATCH_PAUSE_SECONDS = 1.0
 
 
 def _slugify(s: str) -> str:
@@ -389,27 +395,91 @@ async def admin_import_parts(
     return result
 
 
+@router.post("/outreach/preview", response_model=OutreachPreviewOut)
+def outreach_preview(body: OutreachPreviewIn, db: Session = Depends(get_db)):
+    from app.outreach import MAX_OUTREACH_AUDIENCE, resolve_outreach_audience, variables_for_recipient
+    from app.templating import template_to_text_html
+
+    audience = resolve_outreach_audience(
+        db,
+        customer_ids=body.customer_ids,
+        segment_ids=body.segment_ids,
+        manual_emails=[str(e) for e in body.recipients],
+    )
+    if len(audience) > MAX_OUTREACH_AUDIENCE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Audience of {len(audience)} exceeds limit of {MAX_OUTREACH_AUDIENCE}",
+        )
+    if not audience:
+        raise HTTPException(status_code=400, detail="No recipients resolved")
+
+    sample_email, sample_customer = audience[0]
+    variables = variables_for_recipient(sample_email, sample_customer)
+    subject, html_out, text_out = template_to_text_html(
+        body.subject, body.body_md, body.body_html, variables
+    )
+    sample_name = sample_customer.name if sample_customer else sample_email
+    return OutreachPreviewOut(
+        recipient_count=len(audience),
+        sample_email=sample_email,
+        sample_name=sample_name,
+        subject=subject,
+        html=html_out,
+        text=text_out,
+    )
+
+
 @router.post("/outreach/send", response_model=OutreachSendOut)
 async def admin_outreach_send(
     body: OutreachSendIn,
     db: Session = Depends(get_db),
 ):
     from app.email import send_customer_email
+    from app.outreach import MAX_OUTREACH_AUDIENCE, resolve_outreach_audience, variables_for_recipient
     from app.suppression import is_suppressed
+    from app.templating import template_to_text_html
+
+    audience = resolve_outreach_audience(
+        db,
+        customer_ids=body.customer_ids,
+        segment_ids=body.segment_ids,
+        manual_emails=[str(e) for e in body.recipients],
+    )
+    if len(audience) > MAX_OUTREACH_AUDIENCE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Audience of {len(audience)} exceeds limit of {MAX_OUTREACH_AUDIENCE}",
+        )
 
     sent = 0
     skipped = 0
     failed = 0
-    for addr in body.recipients:
-        email = str(addr).strip().lower()
+    for i, (email, customer) in enumerate(audience):
         if is_suppressed(db, email):
             skipped += 1
             continue
-        if await send_customer_email(email, body.subject, body.body):
-            sent += 1
-        else:
+        variables = variables_for_recipient(email, customer)
+        subject, html_out, text_out = template_to_text_html(
+            body.subject, body.body_md, body.body_html, variables
+        )
+        try:
+            ok = await send_customer_email(email, subject, text_out, html=html_out)
+            if ok:
+                sent += 1
+            else:
+                failed += 1
+        except Exception:
             failed += 1
-    return OutreachSendOut(sent=sent, skipped_suppressed=skipped, failed=failed)
+        if (i + 1) % SEND_BATCH_SIZE == 0 and i + 1 < len(audience):
+            await asyncio.sleep(SEND_BATCH_PAUSE_SECONDS)
+
+    return OutreachSendOut(
+        sent=sent,
+        skipped_suppressed=skipped,
+        failed=failed,
+        audience_total=len(audience),
+    )
 
 
 @router.get("/inventory-alerts", response_model=list[dict])

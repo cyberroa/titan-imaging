@@ -170,8 +170,6 @@ def seed_default_presets(db: Session) -> int:
     ]
     added = 0
     for d in defaults:
-        if db.get(AiPromptPreset, d["slug"]) is not None:
-            continue
         existing = db.query(AiPromptPreset).filter(AiPromptPreset.slug == d["slug"]).first()
         if existing:
             continue

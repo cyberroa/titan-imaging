@@ -1,18 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { WorkbenchPageHeader } from "@/components/ui";
+import { OutreachComposer } from "@/components/workbench/outreach/OutreachComposer";
+import { OutreachRecipientZone } from "@/components/workbench/outreach/OutreachRecipientZone";
+import { OutreachSourcePanel } from "@/components/workbench/outreach/OutreachSourcePanel";
+import type {
+  AudienceState,
+  OutreachPreview,
+  OutreachSegment,
+  OutreachTemplate,
+} from "@/components/workbench/outreach/types";
 import { ApiError } from "@/lib/api";
-import { apiFetchWithAuth } from '@/lib/api-workbench';
+import { apiFetchWithAuth } from "@/lib/api-workbench";
 import { createClient } from "@/lib/supabase/client";
 
-export default function AdminOutreachPage() {
+const emptyAudience: AudienceState = {
+  customers: [],
+  segments: [],
+  manualEmails: [],
+};
+
+function useDebounced(value: string, ms: number) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return debounced;
+}
+
+export default function OutreachPage() {
   const [token, setToken] = useState<string | null>(null);
-  const [recipients, setRecipients] = useState("");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounced(search, 300);
+  const [segmentFilter, setSegmentFilter] = useState<OutreachSegment | null>(null);
+  const [audience, setAudience] = useState<AudienceState>(emptyAudience);
+  const [templates, setTemplates] = useState<OutreachTemplate[]>([]);
+  const [templateId, setTemplateId] = useState("");
   const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [bodyMd, setBodyMd] = useState("");
   const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<OutreachPreview | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,20 +50,94 @@ export default function AdminOutreachPage() {
     const supabase = createClient();
     supabase.auth.getSession().then(({ data: { session } }) => {
       setToken(session?.access_token ?? null);
+      if (session?.access_token) {
+        void apiFetchWithAuth<OutreachTemplate[]>(
+          "/api/v1/workbench/templates",
+          session.access_token,
+        ).then(setTemplates);
+      }
     });
   }, []);
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    if (!token) return;
-    const emails = recipients
-      .split(/[\n,;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    if (emails.length === 0) {
-      setError("Add at least one email.");
-      return;
+  const selectedCustomerIds = useMemo(
+    () => new Set(audience.customers.map((c) => c.id)),
+    [audience.customers],
+  );
+
+  const payload = useCallback(
+    () => ({
+      customer_ids: audience.customers.map((c) => c.id),
+      segment_ids: audience.segments.map((s) => s.id),
+      recipients: audience.manualEmails,
+      subject: subject.trim(),
+      body_md: bodyMd.trim(),
+    }),
+    [audience, subject, bodyMd],
+  );
+
+  const canSend =
+    Boolean(token) &&
+    subject.trim().length > 0 &&
+    bodyMd.trim().length > 0 &&
+    (audience.customers.length > 0 ||
+      audience.segments.length > 0 ||
+      audience.manualEmails.length > 0);
+
+  function applyTemplate(id: string) {
+    setTemplateId(id);
+    const tpl = templates.find((t) => t.id === id);
+    if (tpl) {
+      setSubject(tpl.subject);
+      setBodyMd(tpl.body_md);
     }
+    setPreview(null);
+  }
+
+  async function addSegmentWithCount(seg: OutreachSegment & { member_count?: number }) {
+    let member_count = seg.member_count ?? 0;
+    if (token && member_count === 0) {
+      try {
+        const prev = await apiFetchWithAuth<{ count: number }>(
+          `/api/v1/workbench/segments/${seg.id}/preview`,
+          token,
+          { method: "POST" },
+        );
+        member_count = prev.count;
+      } catch {
+        /* keep 0 */
+      }
+    }
+    setAudience((a) => {
+      if (a.segments.some((s) => s.id === seg.id)) return a;
+      return {
+        ...a,
+        segments: [...a.segments, { ...seg, member_count }],
+      };
+    });
+    setPreview(null);
+  }
+
+  async function runPreview() {
+    if (!token || !canSend) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const out = await apiFetchWithAuth<OutreachPreview>(
+        "/api/v1/workbench/outreach/preview",
+        token,
+        { method: "POST", body: JSON.stringify(payload()) },
+      );
+      setPreview(out);
+    } catch (err) {
+      setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Preview failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function send() {
+    if (!token || !canSend) return;
+    if (!confirm("Send this outreach now?")) return;
     setBusy(true);
     setError(null);
     setMessage(null);
@@ -42,18 +146,16 @@ export default function AdminOutreachPage() {
         sent: number;
         skipped_suppressed?: number;
         failed?: number;
+        audience_total?: number;
       }>("/api/v1/workbench/outreach/send", token, {
         method: "POST",
-        body: JSON.stringify({ recipients: emails, subject: subject.trim(), body: body.trim() }),
+        body: JSON.stringify({ ...payload(), template_id: templateId || null }),
       });
-      const parts = [`Sent to ${out.sent} recipient(s)`];
-      if (out.skipped_suppressed && out.skipped_suppressed > 0) {
-        parts.push(`${out.skipped_suppressed} skipped (suppressed)`);
-      }
-      if (out.failed && out.failed > 0) {
-        parts.push(`${out.failed} failed`);
-      }
-      setMessage(`${parts.join(" · ")}.`);
+      const parts = [`Sent to ${out.sent} of ${out.audience_total ?? "?"} recipient(s)`];
+      if (out.skipped_suppressed) parts.push(`${out.skipped_suppressed} skipped (suppressed)`);
+      if (out.failed) parts.push(`${out.failed} failed`);
+      setMessage(parts.join(" · "));
+      setPreview(null);
     } catch (err) {
       setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Send failed");
     } finally {
@@ -69,68 +171,74 @@ export default function AdminOutreachPage() {
         description={
           <>
             <p>
-              Send a one-off plain-text message via Resend. Suppressed addresses (global
-              unsubscribes, bounces, complaints) are skipped automatically.
+              Compose a quick personalized email: search customers and segments, pick a template,
+              customize the message, and send with merge fields like{" "}
+              <code>{`{{ first_name }}`}</code>.
             </p>
             <p className="text-sm text-text-muted">
-              For anything reusable — newsletters, announcements, drip sequences — use{" "}
+              For tracked bulk sends with open/click stats, use{" "}
               <Link href="/workbench/campaigns" className="text-accent-admin underline">
                 Campaigns
-              </Link>{" "}
-              with a saved{" "}
-              <Link href="/workbench/templates" className="text-accent-admin underline">
-                template
-              </Link>{" "}
-              and{" "}
-              <Link href="/workbench/segments" className="text-accent-admin underline">
-                segment
               </Link>
-              . Those sends include open/click tracking and appear on the customer timeline.
+              .
             </p>
           </>
         }
       />
 
-      <form
-        onSubmit={(e) => void send(e)}
-        className="mt-10 max-w-2xl rounded-xl border border-white/10 bg-background-card p-6"
-      >
-        <label className="block text-sm">
-          <span className="text-text-muted">Recipients (comma or newline separated)</span>
-          <textarea
-            className="mt-2 min-h-[100px] w-full rounded-md border border-white/10 bg-black/40 px-3 py-2 font-mono text-xs"
-            value={recipients}
-            onChange={(e) => setRecipients(e.target.value)}
-            placeholder="buyer@example.com, ops@example.com"
-            required
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <div className="space-y-4">
+          <label className="block text-sm">
+            <span className="text-text-muted">Search customers &amp; segments</span>
+            <input
+              className="mt-1 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Name, company, email, website, segment…"
+            />
+          </label>
+          <OutreachSourcePanel
+            token={token}
+            search={debouncedSearch}
+            segmentFilter={segmentFilter}
+            onAddCustomer={(c) => {
+              setAudience((a) =>
+                a.customers.some((x) => x.id === c.id)
+                  ? a
+                  : { ...a, customers: [...a.customers, c] },
+              );
+              setPreview(null);
+            }}
+            onAddSegment={(s) => void addSegmentWithCount(s)}
+            onFilterSegment={setSegmentFilter}
+            selectedCustomerIds={selectedCustomerIds}
           />
-        </label>
-        <label className="mt-6 block text-sm">
-          <span className="text-text-muted">Subject</span>
-          <input
-            className="mt-2 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            required
+        </div>
+
+        <div className="space-y-4">
+          <OutreachRecipientZone audience={audience} onChange={setAudience} />
+          <OutreachComposer
+            templates={templates}
+            templateId={templateId}
+            subject={subject}
+            bodyMd={bodyMd}
+            busy={busy}
+            preview={preview}
+            onTemplateId={applyTemplate}
+            onSubject={(v) => {
+              setSubject(v);
+              setPreview(null);
+            }}
+            onBodyMd={(v) => {
+              setBodyMd(v);
+              setPreview(null);
+            }}
+            onPreview={() => void runPreview()}
+            onSend={() => void send()}
+            canSend={canSend}
           />
-        </label>
-        <label className="mt-6 block text-sm">
-          <span className="text-text-muted">Message</span>
-          <textarea
-            className="mt-2 min-h-[200px] w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            required
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={!token || busy}
-          className="mt-6 rounded-lg bg-accent-admin px-6 py-2 text-sm font-semibold text-black disabled:opacity-40"
-        >
-          {busy ? "Sending…" : "Send"}
-        </button>
-      </form>
+        </div>
+      </div>
 
       {error ? (
         <p className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">

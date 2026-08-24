@@ -91,9 +91,14 @@ def segment_count(db: Session, filter_json: dict[str, Any] | None) -> int:
 
 
 def segment_customers(
-    db: Session, filter_json: dict[str, Any] | None, limit: int | None = None
+    db: Session,
+    filter_json: dict[str, Any] | None,
+    limit: int | None = None,
+    offset: int = 0,
 ) -> list[Customer]:
-    q = build_segment_query(filter_json)
+    q = build_segment_query(filter_json).order_by(Customer.created_at.desc())
+    if offset:
+        q = q.offset(offset)
     if limit:
         q = q.limit(limit)
     return list(db.execute(q).scalars().all())

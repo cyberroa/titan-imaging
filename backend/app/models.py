@@ -127,6 +127,8 @@ class Customer(Base):
     )
     source: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    website: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    search_document: Mapped[str | None] = mapped_column(Text, nullable=True)
     consent_marketing: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )

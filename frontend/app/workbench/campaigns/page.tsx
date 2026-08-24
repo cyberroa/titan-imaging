@@ -42,11 +42,11 @@ export default function AdminCampaignsPage() {
       const [c, tpls, segs] = await Promise.all([
         apiFetchWithAuth<Campaign[]>("/api/v1/workbench/campaigns", t),
         apiFetchWithAuth<Template[]>("/api/v1/workbench/templates", t),
-        apiFetchWithAuth<Segment[]>("/api/v1/workbench/segments", t),
+        apiFetchWithAuth<{ items: Segment[] }>("/api/v1/workbench/segments?limit=100", t),
       ]);
       setRows(c);
       setTemplates(tpls);
-      setSegments(segs);
+      setSegments(segs.items);
     } catch (e) {
       setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Failed to load");
     } finally {
