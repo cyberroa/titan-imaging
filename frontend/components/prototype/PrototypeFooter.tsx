@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { TitanMarkIcon } from "@/components/prototype/BrandMarks";
+import { SocialLinks } from "@/components/prototype/SocialLinks";
 import { StaffAccessLink } from "@/components/StaffAccessLink";
 import { PROTO_NAV_MORE, PROTO_NAV_PRIMARY } from "@/lib/prototype-nav";
 
@@ -17,15 +19,22 @@ export function PrototypeFooter() {
 
   return (
     <footer className="relative z-50 mt-0 border-t border-white/10 bg-background-raised">
-      <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-[1.4fr_1fr] md:px-12 lg:grid-cols-[1.6fr_1fr_1fr]">
-        <div>
-          <p className="font-display text-sm font-bold uppercase tracking-[0.2em] text-white">
-            Titan Imaging Service
-          </p>
-          <p className="mt-2 max-w-sm text-sm leading-relaxed text-text-secondary">
-            Repair, service, parts, and buy/sell support for GE PET/CT systems—built on 30+ years of
-            hands-on imaging expertise.
-          </p>
+      <div className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-2 md:px-12 lg:grid-cols-[1.6fr_1fr_1fr_auto]">
+        <div className="flex items-start gap-4 md:col-span-2 lg:col-span-1">
+          <TitanMarkIcon size="trust" className="opacity-90" />
+          <div>
+            <p className="font-display text-sm font-bold uppercase tracking-[0.2em] text-white">
+              Titan Imaging Service
+            </p>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed text-text-secondary">
+              Repair, service, parts, and buy/sell support for GE PET/CT systems—built on 30+ years of
+              hands-on imaging expertise.
+            </p>
+            <SocialLinks className="mt-3" />
+            <p className="mt-4 text-xs text-text-muted">
+              © {new Date().getFullYear()} TITAN IMAGING. All Rights Reserved.
+            </p>
+          </div>
         </div>
 
         <div>
@@ -66,11 +75,8 @@ export function PrototypeFooter() {
             ) : null}
           </ul>
         </div>
-      </div>
 
-      <div className="border-t border-white/5">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-6 text-sm text-text-muted md:flex-row md:px-12">
-          <p>© {new Date().getFullYear()} TITAN IMAGING. All Rights Reserved.</p>
+        <div className="flex items-start justify-end md:col-start-2 lg:col-start-4">
           <StaffAccessLink variant="footer" />
         </div>
       </div>
