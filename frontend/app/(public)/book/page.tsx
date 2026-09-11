@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { CalendlyEmbed } from "@/components/CalendlyEmbed";
+import { CalEmbed } from "@/components/CalEmbed";
 import { Container, Eyebrow, Section } from "@/components/ui";
 import { IMAGES } from "@/lib/images";
 
 export const metadata: Metadata = {
   title: "Book an Appointment",
-  description: "Schedule time with Titan Imaging Service via Calendly.",
+  description: "Schedule time with Titan Imaging Service.",
   openGraph: {
     title: "Book an Appointment | TITAN IMAGING",
-    description: "Schedule time with Titan Imaging Service via Calendly.",
+    description: "Schedule time with Titan Imaging Service.",
     url: "/book",
   },
   alternates: {
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function BookPage() {
   return (
-    <Section spacing="none" className="relative overflow-visible pb-16 md:pb-20">
+    <Section spacing="none" className="relative overflow-visible pb-10 md:pb-12">
       <div
         className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[min(52vh,600px)] overflow-hidden"
         aria-hidden
@@ -40,14 +40,13 @@ export default function BookPage() {
         <Eyebrow>Scheduling</Eyebrow>
         <h1 className="mt-3 text-3xl font-bold md:text-4xl">Book an Appointment</h1>
         <p className="mx-auto mt-4 max-w-xl text-text-secondary">
-          Choose a time that works for you. Calendly will be swapped for Cal.com in a later phase if
-          you choose to migrate.
+          Choose a time that works for you. Pick a slot and we will confirm by email.
         </p>
       </Container>
 
-      <Container maxWidth="narrow" className="relative z-20 mt-24">
+      <Container maxWidth="narrow" className="relative z-20 mt-8 md:mt-10">
         <div className="overflow-hidden rounded-lg shadow-2xl ring-1 ring-white/10">
-          <CalendlyEmbed />
+          <CalEmbed />
         </div>
       </Container>
     </Section>
