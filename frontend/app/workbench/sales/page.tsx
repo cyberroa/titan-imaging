@@ -28,8 +28,14 @@ type EngagementOpt = {
   channel: string;
   outcome: string;
   occurred_at: string | null;
+  staff_id?: string | null;
 };
-type CampaignOpt = { campaign_id: string; campaign_name: string; recipient_id: string };
+type CampaignOpt = {
+  campaign_id: string;
+  campaign_name: string;
+  recipient_id: string;
+  created_by?: string | null;
+};
 
 export default function AdminSalesPage() {
   return (
@@ -102,7 +108,7 @@ function AdminSalesPageInner() {
             token,
           ),
           apiFetchWithAuth<{
-            items: { kind: string; data?: { campaign_id?: string }; label: string }[];
+            items: { kind: string; data?: { campaign_id?: string; created_by?: string }; label: string }[];
           }>(`/api/v1/workbench/customers/${customerId}/timeline`, token).catch(() => ({
             items: [],
           })),
@@ -117,17 +123,30 @@ function AdminSalesPageInner() {
                 campaign_id: item.data.campaign_id,
                 campaign_name: item.label,
                 recipient_id: "",
+                created_by: item.data.created_by || null,
               });
             }
           }
         }
         setCampaigns(camps);
-        // Default lead owner from latest engagement staff if present
-        const withStaff = (eng.items || []).find((e) => (e as { staff_id?: string }).staff_id);
-        if (withStaff && !leadOwnerId) {
-          const sid = (withStaff as { staff_id?: string }).staff_id;
-          if (sid) setLeadOwnerId(sid);
+        const selectedEngId =
+          sourceType === "engagement" && sourceId
+            ? sourceId
+            : searchParams.get("engagement");
+        const fromEngagement =
+          (selectedEngId && (eng.items || []).find((e) => e.id === selectedEngId)?.staff_id) ||
+          (eng.items || []).find((e) => e.staff_id)?.staff_id;
+        let fromCampaign: string | undefined;
+        for (const camp of camps) {
+          const email = camp.created_by?.toLowerCase();
+          if (!email) continue;
+          const match = staff.find((s) => s.email.toLowerCase() === email);
+          if (match) {
+            fromCampaign = match.id;
+            break;
+          }
         }
+        setLeadOwnerId(fromEngagement || fromCampaign || "");
       } catch {
         if (!cancelled) {
           setEngagements([]);
@@ -139,11 +158,15 @@ function AdminSalesPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [token, customerId, leadOwnerId]);
+  }, [token, customerId, staff, sourceType, sourceId, searchParams]);
 
   async function logSale(e: React.FormEvent) {
     e.preventDefault();
     if (!token || !customerId || !amount) return;
+    if (!leadOwnerId) {
+      setError("Lead owner is required — the staff who generated the lead still gets conversion credit if an owner or partner closes.");
+      return;
+    }
     const cents = Math.round(parseFloat(amount) * 100);
     try {
       await apiFetchWithAuth("/api/v1/workbench/sales/conversions", token, {
@@ -175,7 +198,7 @@ function AdminSalesPageInner() {
         eyebrow="Sales"
         title="Sales"
         align="start"
-        description="Log lead → sale conversions with closer / lead-owner attribution for commissions."
+        description="Who closed can be an owner or partner. Lead owner is the staff who found and warmed the account — they still get conversion credit."
       />
       {error && <p className="text-sm text-red-300">{error}</p>}
 
@@ -215,9 +238,9 @@ function AdminSalesPageInner() {
           className="md:col-span-2"
           value={closerId}
           onChange={setCloserId}
-          placeholder="Closer (default: you)"
+          placeholder="Closed by (owner/partner OK; default: you)"
           options={[
-            { value: "", label: "Closer (default: you)" },
+            { value: "", label: "Closed by (owner/partner OK; default: you)" },
             ...staff.map((s) => ({
               value: s.id,
               label: s.display_name || s.email,
@@ -228,9 +251,10 @@ function AdminSalesPageInner() {
           className="md:col-span-2"
           value={leadOwnerId}
           onChange={setLeadOwnerId}
-          placeholder="Lead owner (optional)"
+          required
+          placeholder="Lead owner (required — who generated the lead)"
           options={[
-            { value: "", label: "Lead owner (optional)" },
+            { value: "", label: "Lead owner (required — who generated the lead)" },
             ...staff.map((s) => ({
               value: s.id,
               label: s.display_name || s.email,
@@ -290,6 +314,8 @@ function AdminSalesPageInner() {
               <th className="px-4 py-3">Amount</th>
               <th className="px-4 py-3">Source</th>
               <th className="px-4 py-3">Closed</th>
+              <th className="px-4 py-3">Closed by</th>
+              <th className="px-4 py-3">Lead owner</th>
               <th className="px-4 py-3">Status</th>
             </tr>
           </thead>
@@ -302,6 +328,16 @@ function AdminSalesPageInner() {
                   {r.source_type ? `${r.source_type}` : "—"}
                 </td>
                 <td className="px-4 py-3">{new Date(r.closed_at).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-text-muted">
+                  {staff.find((s) => s.id === r.closer_staff_id)?.display_name ||
+                    staff.find((s) => s.id === r.closer_staff_id)?.email ||
+                    "—"}
+                </td>
+                <td className="px-4 py-3 text-text-muted">
+                  {staff.find((s) => s.id === r.lead_owner_staff_id)?.display_name ||
+                    staff.find((s) => s.id === r.lead_owner_staff_id)?.email ||
+                    "—"}
+                </td>
                 <td className="px-4 py-3">{r.status}</td>
               </tr>
             ))}

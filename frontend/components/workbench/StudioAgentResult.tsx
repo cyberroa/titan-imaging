@@ -22,6 +22,7 @@ export type StudioAgentCustomerHit = {
 
 export type StudioAgentResultData = {
   intent?: AgentIntent | string;
+  run_id?: string | null;
   engagement?: {
     id: string;
     outcome: string;

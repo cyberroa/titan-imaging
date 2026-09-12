@@ -16,10 +16,12 @@ type Staff = {
   staff_tier_label: string;
   capabilities: string[];
   effective_capabilities: string[];
+  pay_commission_applies_to?: string;
+  pay_policy_name?: string;
   active: boolean;
 };
 
-type Policy = { id: string; name: string; version: number };
+type Policy = { id: string; name: string; version: number; commission_applies_to?: string };
 
 type RoleOption = { id: string; label: string };
 
@@ -115,13 +117,13 @@ export default function AdminTeamPage() {
     await apiFetchWithAuth("/api/v1/workbench/pay-policies", token, {
       method: "POST",
       body: JSON.stringify({
-        name: "Standard Admin Package",
+        name: "Standard marketing package",
         is_default: true,
         commission_rate_bps: 500,
-        commission_applies_to: "closer",
+        commission_applies_to: "lead_owner",
         hourly_rate_cents: 2500,
         terms_markdown:
-          "Commission applies to logged won sales where you are the closer. Hourly rate applies to submitted time entries after acceptance.",
+          "Commission applies to won sales where you are the lead owner (you generated the lead). An owner or partner may close the deal. Hourly rate applies to submitted time entries after acceptance.",
       }),
     });
     await load(token);
@@ -209,6 +211,13 @@ export default function AdminTeamPage() {
                     ? ` · ${s.effective_capabilities.join(", ")}`
                     : null}
                 </p>
+                {s.pay_commission_applies_to === "closer" &&
+                s.effective_capabilities?.includes("marketing") ? (
+                  <p className="mt-1 text-xs text-amber-200/90">
+                    Pay package {s.pay_policy_name ? `“${s.pay_policy_name}”` : ""} credits the closer only.
+                    Marketing lead-gen will not be paid unless this is lead_owner or both_split.
+                  </p>
+                ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
                 <button

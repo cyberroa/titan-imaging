@@ -22,6 +22,8 @@ alembic upgrade head
 python -m app.scripts.seed
 # Optional: rich synthetic CRM personas for agentic Workbench testing (no OpenRouter)
 python -m app.scripts.seed_demo_crm
+# After Studio “Save as gold” labels exist:
+python -m app.scripts.run_eval
 ```
 
 4. Start the server.

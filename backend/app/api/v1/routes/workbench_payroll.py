@@ -195,7 +195,26 @@ def list_role_options():
 def list_staff(db: Session = Depends(get_db), admin: WorkbenchUser = Depends(get_current_workbench_user)):
     _ensure_staff(db, admin)
     rows = db.execute(select(WorkbenchStaff).order_by(WorkbenchStaff.email.asc())).scalars().all()
-    return [_staff_out(s) for s in rows]
+    out = []
+    for s in rows:
+        d = _staff_out(s)
+        assignment = get_active_assignment(db, s.id)
+        pending = db.scalar(
+            select(StaffPayAssignment)
+            .where(
+                StaffPayAssignment.staff_id == s.id,
+                StaffPayAssignment.status == "pending_acceptance",
+            )
+            .order_by(StaffPayAssignment.assigned_at.desc())
+        )
+        pkg = assignment or pending
+        if pkg:
+            p = db.get(PayPolicy, pkg.policy_id)
+            if p:
+                d["pay_commission_applies_to"] = p.commission_applies_to
+                d["pay_policy_name"] = p.name
+        out.append(d)
+    return out
 
 
 @router.post("/staff")
@@ -290,7 +309,7 @@ def create_policy(
         active=True,
         is_default=bool(body.get("is_default")),
         commission_rate_bps=int(body.get("commission_rate_bps") or 500),
-        commission_applies_to=(body.get("commission_applies_to") or "closer")[:24],
+        commission_applies_to=(body.get("commission_applies_to") or "lead_owner")[:24],
         hourly_rate_cents=int(body.get("hourly_rate_cents") or 0),
         currency=(body.get("currency") or "USD")[:3],
         terms_markdown=(body.get("terms_markdown") or "")[:20_000],
@@ -412,6 +431,15 @@ def create_conversion(
     else:
         closed_at = dt.datetime.now(dt.timezone.utc)
 
+    status = (body.get("status") or "won")[:24]
+    lead_owner_staff_id = (
+        uuid.UUID(body["lead_owner_staff_id"]) if body.get("lead_owner_staff_id") else None
+    )
+    if status == "won" and not lead_owner_staff_id:
+        raise HTTPException(
+            status_code=400,
+            detail="lead_owner_staff_id required so marketing staff get conversion credit when someone else closes",
+        )
     conv = SaleConversion(
         id=uuid.uuid4(),
         customer_id=cust.id,
@@ -420,10 +448,8 @@ def create_conversion(
         amount_cents=int(body.get("amount_cents") or 0),
         currency=(body.get("currency") or "USD")[:3],
         closed_at=closed_at,
-        status=(body.get("status") or "won")[:24],
-        lead_owner_staff_id=uuid.UUID(body["lead_owner_staff_id"])
-        if body.get("lead_owner_staff_id")
-        else None,
+        status=status,
+        lead_owner_staff_id=lead_owner_staff_id,
         closer_staff_id=uuid.UUID(body["closer_staff_id"]) if body.get("closer_staff_id") else me.id,
         notes=body.get("notes"),
         created_by_staff_id=me.id,

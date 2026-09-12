@@ -295,6 +295,7 @@ async def studio_agent_endpoint(
             "intent": "draft_copy",
             "message": "Draft ready. Promote to a template or campaign if you want to keep it.",
             "output_text": run.output_text,
+            "run_id": str(run.id),
             "engagement": None,
             "customers": [customer_hit(customer)] if customer else [],
             "task": None,
@@ -526,7 +527,50 @@ def studio_promote(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    save_gold = body.get("save_as_gold")
+    if save_gold is None:
+        save_gold = (body.get("target") or "template") in ("template", "campaign")
+    if save_gold and (body.get("output_text") or "").strip():
+        from app.ai.eval import case_to_out, save_gold_case
+
+        try:
+            gold = save_gold_case(
+                db,
+                gold_output=body.get("output_text") or "",
+                created_by=admin.email,
+                run_id=body.get("run_id"),
+                user_prompt=body.get("user"),
+                system_prompt=body.get("system"),
+                context=body.get("context"),
+            )
+            result["gold"] = case_to_out(gold)
+        except ValueError:
+            pass
     return result
+
+
+@router.post("/studio/gold")
+def studio_save_gold(
+    body: dict[str, Any],
+    db: Session = Depends(get_db),
+    admin: WorkbenchUser = Depends(get_current_workbench_user),
+):
+    from app.ai.eval import case_to_out, save_gold_case
+
+    try:
+        row = save_gold_case(
+            db,
+            gold_output=body.get("gold_output") or body.get("output_text") or "",
+            created_by=admin.email,
+            run_id=body.get("run_id"),
+            user_prompt=body.get("user"),
+            system_prompt=body.get("system"),
+            context=body.get("context"),
+            task=body.get("task") or "email",
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return case_to_out(row)
 
 
 # --- Segments AI ---

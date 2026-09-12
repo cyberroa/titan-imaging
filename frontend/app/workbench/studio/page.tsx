@@ -183,6 +183,8 @@ function AdminAiStudioPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoteName, setPromoteName] = useState("AI Draft");
+  const [lastRunId, setLastRunId] = useState<string | null>(null);
+  const [goldSaved, setGoldSaved] = useState(false);
   const [contextSegment, setContextSegment] = useState<StudioSegmentRef | null>(null);
   const [contextCustomer, setContextCustomer] = useState<StudioCustomerRef | null>(null);
   const [mode, setMode] = useState<Mode>("text");
@@ -464,6 +466,8 @@ function AdminAiStudioPageInner() {
     setDesignPresetId(null);
     setActivePresetId(null);
     setPromoteName("AI Draft");
+    setLastRunId(null);
+    setGoldSaved(false);
     textareaRef.current?.focus();
   }
 
@@ -496,6 +500,8 @@ function AdminAiStudioPageInner() {
           setAgentResult(res);
           setOutput(res.output_text || res.message || "");
           setImageUrl(null);
+          setLastRunId(res.run_id ?? null);
+          setGoldSaved(false);
         } catch (err) {
           if (err instanceof ApiError) {
             const body = err.body as { detail?: AgentResult | string } | undefined;
@@ -524,7 +530,7 @@ function AdminAiStudioPageInner() {
         setOutput("");
         setAgentResult(null);
       } else {
-        const res = await apiFetchWithAuth<{ output_text: string }>(
+        const res = await apiFetchWithAuth<{ output_text: string; id: string }>(
           "/api/v1/workbench/ai/studio/complete",
           token,
           {
@@ -541,6 +547,8 @@ function AdminAiStudioPageInner() {
           },
         );
         setOutput(res.output_text);
+        setLastRunId(res.id);
+        setGoldSaved(false);
         setAgentResult(null);
       }
       await load(token);
@@ -564,10 +572,41 @@ function AdminAiStudioPageInner() {
           name: promoteName,
           image_url: imageUrl,
           segment_id: contextSegment?.id || undefined,
+          run_id: lastRunId,
+          save_as_gold: target === "template" || target === "campaign",
+          user: userPrompt,
+          system: systemPrompt,
+          context: {
+            ...(contextSegment ? { segment_id: contextSegment.id } : {}),
+            ...(contextCustomer ? { customer_id: contextCustomer.id } : {}),
+          },
         }),
       },
     );
     alert(`Created ${res.type}: ${res.id}`);
+    if (target === "template" || target === "campaign") setGoldSaved(true);
+  }
+
+  async function saveGold() {
+    if (!token || !output.trim()) return;
+    try {
+      await apiFetchWithAuth("/api/v1/workbench/ai/studio/gold", token, {
+        method: "POST",
+        body: JSON.stringify({
+          gold_output: output,
+          run_id: lastRunId,
+          user: userPrompt,
+          system: systemPrompt,
+          context: {
+            ...(contextSegment ? { segment_id: contextSegment.id } : {}),
+            ...(contextCustomer ? { customer_id: contextCustomer.id } : {}),
+          },
+        }),
+      });
+      setGoldSaved(true);
+    } catch (e) {
+      setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Could not save gold");
+    }
   }
 
   const ready = status?.configured;
@@ -1210,7 +1249,10 @@ function AdminAiStudioPageInner() {
               {output && (
                 <textarea
                   value={output}
-                  onChange={(e) => setOutput(e.target.value)}
+                  onChange={(e) => {
+                    setOutput(e.target.value);
+                    setGoldSaved(false);
+                  }}
                   rows={12}
                   className="w-full resize-y rounded-2xl border border-white/8 bg-black/20 px-4 py-3 text-sm leading-relaxed text-white/90 outline-none focus:border-accent-admin/30"
                 />
@@ -1224,6 +1266,14 @@ function AdminAiStudioPageInner() {
                 />
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void saveGold()}
+                  disabled={!output.trim() || goldSaved}
+                  className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/5 disabled:opacity-40"
+                >
+                  {goldSaved ? "Saved as gold" : "Save as gold"}
+                </button>
                 <button
                   type="button"
                   onClick={() => void promote("template")}

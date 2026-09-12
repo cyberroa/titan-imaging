@@ -307,7 +307,7 @@ def customer_timeline(customer_id: str, db: Session = Depends(get_db)):
                         kind=label,
                         occurred_at=when,
                         label=f"{camp.name} — {label.split(':', 1)[1]}",
-                        data={"campaign_id": str(camp.id), "status": recip.status},
+                        data={"campaign_id": str(camp.id), "status": recip.status, "created_by": camp.created_by},
                     )
                 )
                 break
@@ -317,7 +317,7 @@ def customer_timeline(customer_id: str, db: Session = Depends(get_db)):
                     kind="campaign:queued",
                     occurred_at=recip.created_at,
                     label=f"{camp.name} — queued",
-                    data={"campaign_id": str(camp.id), "status": recip.status},
+                    data={"campaign_id": str(camp.id), "status": recip.status, "created_by": camp.created_by},
                 )
             )
 

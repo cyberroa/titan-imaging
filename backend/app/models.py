@@ -457,6 +457,25 @@ class AiStudioRun(Base):
     )
 
 
+class AiEvalCase(Base):
+    __tablename__ = "ai_eval_cases"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ai_studio_runs.id", ondelete="SET NULL"), nullable=True
+    )
+    task: Mapped[str] = mapped_column(String(24), nullable=False, server_default="email")
+    eval_split: Mapped[str] = mapped_column(String(16), nullable=False, server_default="dev", index=True)
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    user_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    context_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    gold_output: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 # --------------------------------------------------------------------------
 # Phase J — opportunities + marketing goals
 # --------------------------------------------------------------------------
