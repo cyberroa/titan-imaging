@@ -69,11 +69,12 @@ async def _send_customer_email_full(
     campaign_id: str | None = None,
     tags: list[dict[str, str]] | None = None,
     include_footer: bool = True,
+    from_email: str | None = None,
 ) -> tuple[bool, str | None, dict | None]:
     settings = get_settings()
     if not settings.resend_api_key:
         return False, None, None
-    email_from = settings.email_from_customer or settings.email_from or settings.admin_notify_email
+    email_from = from_email or settings.email_from_customer or settings.email_from or settings.admin_notify_email
     if not email_from:
         return False, None, None
 
@@ -106,6 +107,7 @@ async def send_campaign_email(
     html: str | None = None,
     campaign_id: str | None = None,
     tags: list[dict[str, str]] | None = None,
+    from_email: str | None = None,
 ) -> tuple[bool, str | None]:
     """Send a campaign email. Returns (ok, resend_message_id)."""
     ok, msg_id, _ = await _send_customer_email_full(
@@ -116,6 +118,7 @@ async def send_campaign_email(
         campaign_id=campaign_id,
         tags=tags,
         include_footer=True,
+        from_email=from_email,
     )
     return ok, msg_id
 

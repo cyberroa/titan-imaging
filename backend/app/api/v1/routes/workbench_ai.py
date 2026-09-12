@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -203,18 +203,19 @@ async def studio_agent_endpoint(
     db: Session = Depends(get_db),
     admin: WorkbenchUser = Depends(get_current_workbench_user),
 ):
-    """Log a customer engagement from Studio Agent (voice/text or pasted email)."""
+    """Voice/text agent: log engagement, draft copy, look up accounts, research, or note."""
     from sqlalchemy import select
 
+    from app.ai.agent_queue import enqueue_task, task_to_out
     from app.ai.engagement import (
         ai_extract_engagement,
         create_engagement,
         engagement_to_out,
-        match_customer_from_email_text,
         recent_campaigns_for_customer,
         recompute_fit_for_customer,
     )
-    from app.ai.studio import enrich_studio_context
+    from app.ai.studio import enrich_studio_context, studio_complete
+    from app.ai.studio_agent import classify_agent_intent, customer_hit, resolve_customer, search_accounts
     from app.models import Customer, WorkbenchStaff
     from app.staff_permissions import CAPABILITIES, sync_legacy_role
 
@@ -226,17 +227,149 @@ async def studio_agent_endpoint(
         raise HTTPException(status_code=400, detail="text or raw_email required")
 
     channel = (body.get("channel") or ("email_paste" if raw_email else "studio_agent"))[:32]
-    customer_id = body.get("customer_id") or (body.get("context") or {}).get("customer_id")
-    customer = None
-    if customer_id:
-        customer = db.get(Customer, customer_id)
-    if not customer and (raw_email or channel in ("email_paste", "email_inbound")):
-        customer = match_customer_from_email_text(db, raw_email or text)
-    if not customer:
+    context = dict(body.get("context") or {})
+    customer_id = body.get("customer_id") or context.get("customer_id")
+    customer = resolve_customer(db, customer_id=str(customer_id) if customer_id else None, text=text, query="")
+
+    classified = await classify_agent_intent(text, has_customer=customer is not None)
+    intent = classified["intent"]
+    if channel in ("email_paste", "email_inbound"):
+        intent = "log_engagement"
+
+    if customer is None and classified["query"]:
+        customer = resolve_customer(
+            db, customer_id=None, text=text, query=classified["query"]
+        )
+
+    def _need_customer() -> None:
+        if customer:
+            return
+        hits = search_accounts(db, classified["query"] or text, limit=8)
         raise HTTPException(
             status_code=400,
-            detail="customer_id required (or include a known customer email in the paste)",
+            detail={
+                "intent": "lookup",
+                "message": "Pick a customer, or say the account name more specifically.",
+                "customers": hits,
+            },
         )
+
+    if intent == "lookup" or (customer is None and intent in ("research", "note", "log_engagement")):
+        hits = search_accounts(db, classified["query"] or text, limit=8)
+        if intent != "lookup" and len(hits) == 1:
+            customer = db.get(Customer, hits[0]["id"])
+        elif intent == "lookup" or customer is None:
+            return {
+                "intent": "lookup",
+                "message": "Matching accounts. Attach one and run Agent again, or be more specific.",
+                "customers": hits,
+                "engagement": None,
+                "output_text": None,
+                "task": None,
+                "lead_stage": None,
+                "fit_scores": [],
+                "next_actions": [
+                    {
+                        "id": f"cust-{h['id']}",
+                        "label": h["company"] or h["name"] or h["email"],
+                        "href": f"/workbench/studio?mode=agent&customer={h['id']}",
+                    }
+                    for h in hits[:6]
+                ],
+                "draft_sale": None,
+            }
+
+    if intent == "draft_copy":
+        run = await studio_complete(
+            db,
+            model=body.get("model"),
+            system_prompt=body.get("system"),
+            user_prompt=text,
+            context={
+                **context,
+                **({"customer_id": str(customer.id)} if customer else {}),
+            },
+            created_by=admin.email,
+        )
+        return {
+            "intent": "draft_copy",
+            "message": "Draft ready. Promote to a template or campaign if you want to keep it.",
+            "output_text": run.output_text,
+            "engagement": None,
+            "customers": [customer_hit(customer)] if customer else [],
+            "task": None,
+            "lead_stage": getattr(customer, "lead_stage", None),
+            "fit_scores": [],
+            "next_actions": (
+                [
+                    {
+                        "id": "view_customer",
+                        "label": "Open dossier",
+                        "href": f"/workbench/customers/{customer.id}",
+                    }
+                ]
+                if customer
+                else []
+            ),
+            "draft_sale": None,
+        }
+
+    _need_customer()
+    assert customer is not None
+
+    if intent == "research":
+        task = enqueue_task(
+            db,
+            kind="research",
+            subject_type="customer",
+            subject_id=customer.id,
+            reason=(classified["note"] or text)[:2000],
+            created_by=admin.email,
+        )
+        return {
+            "intent": "research",
+            "message": "Research queued for this account.",
+            "task": task_to_out(task),
+            "engagement": None,
+            "output_text": None,
+            "customers": [customer_hit(customer)],
+            "lead_stage": getattr(customer, "lead_stage", None) or "new",
+            "fit_scores": [],
+            "next_actions": [
+                {
+                    "id": "view_customer",
+                    "label": "Open dossier",
+                    "href": f"/workbench/customers/{customer.id}",
+                }
+            ],
+            "draft_sale": None,
+        }
+
+    if intent == "note":
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        addition = (classified["note"] or text).strip()
+        prev = (customer.notes or "").strip()
+        customer.notes = f"{prev}\n\n[{stamp} · {admin.email}]\n{addition}".strip() if prev else f"[{stamp} · {admin.email}]\n{addition}"
+        db.commit()
+        db.refresh(customer)
+        return {
+            "intent": "note",
+            "message": "Note saved on the customer record.",
+            "engagement": None,
+            "output_text": customer.notes,
+            "task": None,
+            "customers": [customer_hit(customer)],
+            "lead_stage": getattr(customer, "lead_stage", None) or "new",
+            "fit_scores": [],
+            "next_actions": [
+                {
+                    "id": "view_customer",
+                    "label": "Open dossier",
+                    "href": f"/workbench/customers/{customer.id}",
+                }
+            ],
+            "draft_sale": None,
+        }
 
     staff = db.scalar(select(WorkbenchStaff).where(WorkbenchStaff.email == admin.email))
     if not staff:
@@ -255,7 +388,7 @@ async def studio_agent_endpoint(
         db.flush()
 
     dossier = enrich_studio_context(
-        db, {"customer_id": str(customer.id), **(body.get("context") or {})}
+        db, {"customer_id": str(customer.id), **context}
     )
     dossier["recent_campaigns"] = recent_campaigns_for_customer(db, customer)
     dossier["lead_stage"] = getattr(customer, "lead_stage", None) or "new"
@@ -325,12 +458,16 @@ async def studio_agent_endpoint(
         }
 
     return {
+        "intent": "log_engagement",
         "engagement": engagement_to_out(row),
         "lead_stage": customer.lead_stage,
         "fit_scores": scores,
         "extraction": extracted,
         "next_actions": next_actions,
         "draft_sale": draft_sale,
+        "output_text": None,
+        "task": None,
+        "customers": [customer_hit(customer)],
         "message": "Engagement logged. Confirm any sale amount on Sales before commissions post.",
     }
 
@@ -488,6 +625,20 @@ def job_snapshots(db: Session = Depends(get_db)):
 @router.post("/jobs/snapshots/manual")
 def job_snapshots_manual(db: Session = Depends(get_db)):
     return run_engagement_snapshots(db)
+
+
+@router.post("/jobs/campaigns-tick", dependencies=[Depends(_verify_cron)])
+async def job_campaigns_tick(db: Session = Depends(get_db)):
+    from app.campaign_sequence import tick_sequences
+
+    return await tick_sequences(db)
+
+
+@router.post("/jobs/campaigns-tick/manual")
+async def job_campaigns_tick_manual(db: Session = Depends(get_db)):
+    from app.campaign_sequence import tick_sequences
+
+    return await tick_sequences(db)
 
 
 @router.post("/jobs/opportunities", dependencies=[Depends(_verify_cron)])

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { WorkbenchPageHeader } from "@/components/ui";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from "@/lib/api-workbench";
+import { graphqlQuery } from "@/lib/workbench-graphql";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/cn";
 import {
@@ -107,7 +108,22 @@ export default function AdminAnalyticsPage() {
     setError(null);
     try {
       const [live, leads, ov] = await Promise.all([
-        apiFetchWithAuth<LiveSession[]>("/api/v1/workbench/sessions/live?minutes=15", t),
+        graphqlQuery<{ liveVisitors: LiveSession[] }>(
+          t,
+          `query Live($minutes: Int!) {
+            liveVisitors(minutes: $minutes) {
+              id
+              first_seen_at: firstSeenAt
+              last_seen_at: lastSeenAt
+              score
+              current_url: currentUrl
+              latest_search: latestSearch
+              parts_viewed: partsViewed
+              customer { id email name company }
+            }
+          }`,
+          { minutes: 15 },
+        ).then((d) => d.liveVisitors),
         apiFetchWithAuth<HotLead[]>("/api/v1/workbench/sessions/hot-leads?hours=24", t),
         apiFetchWithAuth<AnalyticsOverview>("/api/v1/workbench/analytics/overview", t),
       ]);

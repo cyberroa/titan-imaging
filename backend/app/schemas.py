@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
@@ -325,6 +325,7 @@ class TemplateOut(BaseModel):
 
 class TemplatePreviewIn(BaseModel):
     sample: dict[str, Any] = Field(default_factory=dict)
+    customer_id: str | None = None
 
 
 class TemplatePreviewOut(BaseModel):
@@ -358,12 +359,43 @@ class CampaignOut(BaseModel):
     name: str
     template_id: str
     segment_id: str | None = None
+    mail_domain_id: str | None = None
     status: str
     scheduled_at: datetime | None = None
     sent_at: datetime | None = None
+    previewed_at: datetime | None = None
+    sequence_started_at: datetime | None = None
+    sequence_ends_on: date | None = None
+    daily_quota: int | None = None
     stats_json: dict[str, Any] = Field(default_factory=dict)
+    progress: dict[str, Any] = Field(default_factory=dict)
     created_by: str | None = None
     created_at: datetime
+
+
+class CampaignArmIn(BaseModel):
+    mail_domain_id: str
+    max_per_day: int = Field(default=80, ge=1, le=5000)
+    max_days: int = Field(default=14, ge=1, le=90)
+
+
+class MailDomainCreate(BaseModel):
+    hostname: str = Field(min_length=3, max_length=255)
+    from_email: EmailStr
+    daily_cap: int = Field(default=80, ge=1, le=5000)
+    resend_domain_id: str | None = None
+
+
+class MailDomainOut(BaseModel):
+    id: str
+    hostname: str
+    from_email: str
+    daily_cap: int
+    warmup_stage: str
+    sent_today: int
+    last_sent_date: date | None = None
+    active: bool
+    resend_domain_id: str | None = None
 
 
 class CampaignRecipientOut(BaseModel):

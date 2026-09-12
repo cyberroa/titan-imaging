@@ -72,6 +72,7 @@ HREF_ROUTE_IDS: dict[str, str] = {
     "/workbench/goals": "goals",
     "/workbench/templates": "templates",
     "/workbench/campaigns": "campaigns",
+    "/workbench/traffic": "live",
     "/workbench/social": "social",
     "/workbench/outreach": "outreach",
     "/workbench/sales": "sales",

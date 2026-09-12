@@ -1,6 +1,7 @@
 "use client";
 
 import { MERGE_VARIABLES, type OutreachPreview, type OutreachTemplate } from "./types";
+import { EmailHtmlPreview } from "@/components/workbench/EmailHtmlPreview";
 import { WorkbenchSelect } from "@/components/workbench/WorkbenchSelect";
 
 type Props = {
@@ -76,13 +77,12 @@ export function OutreachComposer({
       </p>
 
       {preview ? (
-        <div className="rounded-lg border border-white/10 bg-black/40 p-3 text-sm">
+        <div className="space-y-2">
           <p className="text-xs text-text-muted">
             Preview for {preview.sample_name || preview.sample_email} · {preview.recipient_count}{" "}
             recipient(s)
           </p>
-          <p className="mt-2 font-medium">{preview.subject}</p>
-          <pre className="mt-2 whitespace-pre-wrap text-xs text-text-muted">{preview.text}</pre>
+          <EmailHtmlPreview subject={preview.subject} html={preview.html} text={preview.text} />
         </div>
       ) : null}
 

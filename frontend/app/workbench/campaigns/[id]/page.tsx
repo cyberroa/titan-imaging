@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { CampaignProgressBar } from "@/components/workbench/CampaignProgressBar";
+import { EmailHtmlPreview } from "@/components/workbench/EmailHtmlPreview";
+import { WorkbenchSelect } from "@/components/workbench/WorkbenchSelect";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from '@/lib/api-workbench';
 import { createClient } from "@/lib/supabase/client";
@@ -12,12 +15,25 @@ type Campaign = {
   name: string;
   template_id: string;
   segment_id: string | null;
+  mail_domain_id: string | null;
   status: string;
   scheduled_at: string | null;
   sent_at: string | null;
+  previewed_at: string | null;
   stats_json: Record<string, unknown>;
+  progress: {
+    total: number;
+    sent: number;
+    remaining: number;
+    failed: number;
+    days: number;
+    day_index: number;
+    percent: number;
+  };
   created_at: string;
 };
+
+type MailDomain = { id: string; hostname: string; from_email: string; daily_cap: number; active: boolean };
 
 type Recipient = {
   id: string;
@@ -43,6 +59,10 @@ export default function CampaignDetailPage() {
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [domains, setDomains] = useState<MailDomain[]>([]);
+  const [domainId, setDomainId] = useState("");
+  const [maxPerDay, setMaxPerDay] = useState("80");
+  const [maxDays, setMaxDays] = useState("14");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,12 +70,16 @@ export default function CampaignDetailPage() {
     setLoading(true);
     setError(null);
     try {
-      const [c, r] = await Promise.all([
+      const [c, r, d] = await Promise.all([
         apiFetchWithAuth<Campaign>(`/api/v1/workbench/campaigns/${id}`, t),
         apiFetchWithAuth<Recipient[]>(`/api/v1/workbench/campaigns/${id}/recipients`, t),
+        apiFetchWithAuth<MailDomain[]>("/api/v1/workbench/mail-domains", t),
       ]);
       setCampaign(c);
       setRecipients(r);
+      setDomains(d.filter((x) => x.active));
+      const preferred = c.mail_domain_id || d.find((x) => x.active)?.id || d[0]?.id;
+      setDomainId((current) => current || preferred || "");
     } catch (e) {
       setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Failed to load");
     } finally {
@@ -82,8 +106,36 @@ export default function CampaignDetailPage() {
         { method: "POST", body: JSON.stringify({ sample: {} }) },
       );
       setPreview(p);
+      await load(token);
     } catch (err) {
       setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Preview failed");
+    }
+  }
+
+  async function arm() {
+    if (!token || !id) return;
+    try {
+      await apiFetchWithAuth(`/api/v1/workbench/campaigns/${id}/arm`, token, {
+        method: "POST",
+        body: JSON.stringify({
+          mail_domain_id: domainId,
+          max_per_day: Number(maxPerDay) || 80,
+          max_days: Number(maxDays) || 14,
+        }),
+      });
+      await load(token);
+    } catch (err) {
+      setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Arm failed");
+    }
+  }
+
+  async function pause() {
+    if (!token || !id) return;
+    try {
+      await apiFetchWithAuth(`/api/v1/workbench/campaigns/${id}/pause`, token, { method: "POST" });
+      await load(token);
+    } catch (err) {
+      setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Pause failed");
     }
   }
 
@@ -103,6 +155,8 @@ export default function CampaignDetailPage() {
         <p className="mt-6 text-red-200">{error ?? "Not found"}</p>
       ) : (
         <>
+          {error ? <p className="mt-3 text-sm text-red-200">{error}</p> : null}
+
           <section className="mt-6">
             <h1 className="text-2xl font-bold md:text-3xl">{campaign.name}</h1>
             <p className="mt-1 text-sm text-text-muted">
@@ -119,23 +173,78 @@ export default function CampaignDetailPage() {
                 {String(summary.skipped_suppressed ?? "—")}
               </p>
             ) : null}
-            <button
-              type="button"
-              className="mt-4 rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-text-secondary hover:border-accent-admin hover:text-accent-admin"
-              onClick={() => void runPreview()}
-            >
-              Preview email
-            </button>
+            <div className="mt-4 max-w-xl">
+              <CampaignProgressBar progress={campaign.progress} />
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="rounded-lg border border-white/15 px-4 py-2 text-sm font-semibold text-text-secondary hover:border-accent-admin hover:text-accent-admin"
+                onClick={() => void runPreview()}
+              >
+                Preview HTML
+              </button>
+              {campaign.status === "armed" || campaign.status === "running" ? (
+                <button
+                  type="button"
+                  className="rounded-lg border border-white/15 px-4 py-2 text-sm"
+                  onClick={() => void pause()}
+                >
+                  Pause
+                </button>
+              ) : null}
+            </div>
+            {campaign.status === "draft" || campaign.status === "scheduled" || campaign.status === "paused" ? (
+              <div className="mt-6 grid max-w-xl gap-3 rounded-xl border border-white/10 p-4 sm:grid-cols-2">
+                <label className="block text-sm sm:col-span-2">
+                  <span className="text-text-muted">Mail domain</span>
+                  <WorkbenchSelect
+                    className="mt-1"
+                    value={domainId}
+                    onChange={setDomainId}
+                    options={domains.map((d) => ({
+                      value: d.id,
+                      label: `${d.hostname} (${d.from_email})`,
+                    }))}
+                    placeholder="Add a mail domain first"
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-text-muted">Max per day</span>
+                  <input
+                    className="mt-1 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
+                    value={maxPerDay}
+                    onChange={(e) => setMaxPerDay(e.target.value)}
+                  />
+                </label>
+                <label className="block text-sm">
+                  <span className="text-text-muted">Max days</span>
+                  <input
+                    className="mt-1 w-full rounded-md border border-white/10 bg-black/40 px-3 py-2"
+                    value={maxDays}
+                    onChange={(e) => setMaxDays(e.target.value)}
+                  />
+                </label>
+                <div className="sm:col-span-2">
+                  <button
+                    type="button"
+                    disabled={!campaign.previewed_at || !domainId}
+                    className="rounded-lg bg-accent-admin px-4 py-2 text-sm font-semibold text-black disabled:opacity-40"
+                    onClick={() => void arm()}
+                  >
+                    Arm sequenced send
+                  </button>
+                  <p className="mt-2 text-xs text-white/45">
+                    Preview HTML first. Cron `POST /api/v1/workbench/ai/jobs/campaigns-tick` sends the daily quota from the mail domain, not the site apex.
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </section>
 
           {preview ? (
-            <div className="mt-6 rounded-xl border border-white/10 bg-background-card p-6">
-              <h2 className="text-lg font-semibold">Preview</h2>
-              <p className="mt-1 text-sm text-text-muted">Subject: {preview.subject}</p>
-              <div
-                className="prose prose-invert mt-4 max-w-none rounded-md border border-white/10 bg-white/5 p-4 text-sm"
-                dangerouslySetInnerHTML={{ __html: preview.html }}
-              />
+            <div className="mt-6">
+              <EmailHtmlPreview subject={preview.subject} html={preview.html} text={preview.text} />
             </div>
           ) : null}
 
