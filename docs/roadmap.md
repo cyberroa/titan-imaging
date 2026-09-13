@@ -2,9 +2,9 @@
 
 > **Purpose:** Single reference for where the project is, where it is going, and how to keep working from any machine (including while waiting on API keys at your uncle’s).
 >
-> **Related docs:** [`implementation-plan.md`](../implementation-plan.md) (detailed build history) · [`deploy-staging.md`](deploy-staging.md) · [`production-cutover.md`](production-cutover.md) · [`Design.md`](../Design.md)
+> **Related docs:** [`implementation-plan.md`](../implementation-plan.md) · [`eval-harness.md`](eval-harness.md) · [`deploy-staging.md`](deploy-staging.md) · [`production-cutover.md`](production-cutover.md) · [`Design.md`](../Design.md)
 
-**Last updated:** August 2026  
+**Last updated:** September 2026  
 **Stack:** Next.js 16 (Vercel) · FastAPI (Render) · Supabase · Resend · OpenRouter · Gemini (images) · Firecrawl (competitors) · Make (LinkedIn)
 
 ---
@@ -26,6 +26,7 @@
 | **4B-F** | Market Map (graph CRM) | **Complete in code** |
 | **4B-G** | Daily AI briefings → email + Slack | **Complete in code** |
 | **4B-H** | AI Studio (`/workbench/studio`) | **Complete in code** |
+| Eval | Studio gold labels + CLI overlap eval | **Thin slice shipped** — UI / LLM-judge / FT later ([`eval-harness.md`](eval-harness.md)) |
 | **4B-I** | Staff payroll & sales commission | **Complete in code** |
 | **4B-J** | Goals → opportunity segments | **Complete in code** |
 | 4B-S3 | Competitor listings (Firecrawl) | **Complete in code** (needs `FIRECRAWL_API_KEY`) |
@@ -525,13 +526,12 @@ feature branch → PR → staging → test Preview URL → PR → main (producti
 
 ## 11. Out of scope (later)
 
-- Autonomous campaign send without human review  
-- Unsupervised new goals invented daily without approval (Phase J keeps human approve on new goal→segment links)  
-- ACH / automatic commission payout  
-- Full HR/tax payroll  
-- Competitor scrape via Firecrawl (Sprint 3 — in code; needs `FIRECRAWL_API_KEY`)  
-- GraphQL ad-hoc analytics layer  
-- Custom model fine-tuning
+- Autonomous campaign send without human review
+- Unsupervised new goals invented daily without approval (Phase J keeps human approve on new goal→segment links)
+- ACH / automatic commission payout
+- Full HR/tax payroll
+- Competitor scrape via Firecrawl (Sprint 3 — in code; needs `FIRECRAWL_API_KEY`)
+- Eval Workbench UI, LLM-as-judge, and custom model fine-tuning — see [`eval-harness.md`](eval-harness.md) (gold + CLI overlap scoring is already in)
 
 ---
 
@@ -545,3 +545,4 @@ feature branch → PR → staging → test Preview URL → PR → main (producti
 | [`docs/phase4a-make-setup.md`](phase4a-make-setup.md) | LinkedIn / Make |
 | [`docs/deploy-staging.md`](deploy-staging.md) | Staging environment |
 | [`docs/production-cutover.md`](production-cutover.md) | Go-live checklist |
+| [`docs/eval-harness.md`](eval-harness.md) | Studio gold eval — shipped CLI vs later UI/FT |
