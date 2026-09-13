@@ -910,6 +910,20 @@ async def job_slack_hot_alerts_manual(db: Session = Depends(get_db)):
     return {"hot": hot, "research": digest}
 
 
+@router.post("/jobs/notifications-tick", dependencies=[Depends(_verify_cron)])
+def job_notifications_tick(db: Session = Depends(get_db)):
+    from app.ai.notifications import tick_notifications
+
+    return tick_notifications(db)
+
+
+@router.post("/jobs/notifications-tick/manual")
+def job_notifications_tick_manual(db: Session = Depends(get_db)):
+    from app.ai.notifications import tick_notifications
+
+    return tick_notifications(db)
+
+
 @router.post("/jobs/mailbox-sync", dependencies=[Depends(_verify_cron)])
 async def job_mailbox_sync(db: Session = Depends(get_db), limit: int = 25):
     from app.mailbox import sync_mailbox
