@@ -24,6 +24,15 @@ export default function WorkbenchGuidePage({
         description={guide.summary}
       />
 
+      <p className="text-sm text-text-secondary">
+        <span className="font-semibold text-white/70">Who: </span>
+        {guide.audience}
+      </p>
+      <p className="text-sm text-text-secondary">
+        <span className="font-semibold text-white/70">When to use: </span>
+        {guide.whenToUse}
+      </p>
+
       {guide.status === "stub" ? (
         <p className="rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-text-muted">
           This guide is a stub. Full how-to content will be added as the feature is fully implemented.
@@ -38,6 +47,24 @@ export default function WorkbenchGuidePage({
           ))}
         </ol>
       </section>
+
+      {guide.related.length ? (
+        <section>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-text-muted">Related</h2>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {guide.related.map((rel) => (
+              <li key={rel.href}>
+                <Link
+                  href={rel.href}
+                  className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-semibold text-white/80 transition hover:border-accent-admin hover:text-accent-admin"
+                >
+                  {rel.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="flex flex-wrap gap-3">
         <Link

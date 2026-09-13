@@ -13,7 +13,10 @@ def test_match_guides_studio():
     assert "/workbench" in hrefs
 
 
-def test_match_guides_fallback_index():
+def test_match_guides_traffic():
+    links = match_guides("Where do I see site traffic pageviews?")
+    hrefs = [g["href"] for g in links]
+    assert "/workbench/guides/traffic" in hrefs
     links = match_guides("zzzz unrelated xyz")
     assert links[0]["href"] == "/workbench/guides"
 

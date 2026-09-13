@@ -4,18 +4,39 @@ from __future__ import annotations
 
 GUIDES: list[dict[str, str]] = [
     {
+        "slug": "welcome",
+        "title": "Operations Center",
+        "feature_href": "/workbench",
+        "summary": "Home dashboard, rankings, and sitemap with a Guide link on every area.",
+        "keywords": "welcome home operations center sitemap dashboard rankings",
+    },
+    {
         "slug": "studio",
         "title": "AI Studio",
         "feature_href": "/workbench/studio",
         "summary": "Generate marketing email, social, and outreach copy (and images) with brand presets.",
-        "keywords": "studio ai prompt image generate preset marketing copy",
+        "keywords": "studio ai prompt image generate preset marketing copy agent gold",
+    },
+    {
+        "slug": "actions",
+        "title": "Actions",
+        "feature_href": "/workbench/actions",
+        "summary": "Today’s team queue plus live Analytics progressions.",
+        "keywords": "actions queue progressions team today",
     },
     {
         "slug": "analytics",
         "title": "Analytics",
         "feature_href": "/workbench/analytics",
         "summary": "Live visitors, lead-stage pipeline, and engagement progressions.",
-        "keywords": "analytics pipeline visitors live agent engagement",
+        "keywords": "analytics pipeline visitors live agent engagement notification bell",
+    },
+    {
+        "slug": "traffic",
+        "title": "Site traffic",
+        "feature_href": "/workbench/traffic",
+        "summary": "Pageviews, sessions, top pages, and sources for a date range.",
+        "keywords": "traffic pageviews sessions sources graphql site",
     },
     {
         "slug": "insights",
@@ -63,8 +84,8 @@ GUIDES: list[dict[str, str]] = [
         "slug": "campaigns",
         "title": "Campaigns",
         "feature_href": "/workbench/campaigns",
-        "summary": "Send campaigns via Resend.",
-        "keywords": "campaign resend send email blast",
+        "summary": "Sequenced or one-shot email via Resend; arm/pause and daily quota.",
+        "keywords": "campaign resend send email blast sequence arm pause quota",
     },
     {
         "slug": "social",
@@ -84,8 +105,8 @@ GUIDES: list[dict[str, str]] = [
         "slug": "sales",
         "title": "Sales",
         "feature_href": "/workbench/sales",
-        "summary": "Log conversions and commissions.",
-        "keywords": "sales won conversion commission",
+        "summary": "Log won conversions with closer and lead owner; KPIs and owner attribution.",
+        "keywords": "sales won conversion commission lead owner closer kpi",
     },
     {
         "slug": "service",
@@ -99,7 +120,14 @@ GUIDES: list[dict[str, str]] = [
         "title": "Team",
         "feature_href": "/workbench/team",
         "summary": "Staff roster and pay packages (owner).",
-        "keywords": "team staff roster role",
+        "keywords": "team staff roster role pay package",
+    },
+    {
+        "slug": "feedback",
+        "title": "Staff feedback",
+        "feature_href": "/workbench/feedback",
+        "summary": "Inbox of Help-flyout feedback for owners and ops leads.",
+        "keywords": "feedback help inbox ops lead owner",
     },
     {
         "slug": "mypay",

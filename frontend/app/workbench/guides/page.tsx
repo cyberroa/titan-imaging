@@ -11,7 +11,7 @@ export default function WorkbenchGuidesIndexPage() {
         eyebrow="Guides"
         title="Workbench guides"
         align="start"
-        description="How-to docs for each Workbench area. Stubs today — expand as features ship."
+        description="How-to for every Workbench sitemap page: who can use it, when, and the steps."
       />
       <ul className="divide-y divide-white/10 rounded-xl border border-white/10">
         {WORKBENCH_GUIDES.map((g) => (
@@ -22,7 +22,7 @@ export default function WorkbenchGuidesIndexPage() {
               </Link>
               <p className="text-sm text-text-muted">{g.summary}</p>
             </div>
-            <span className="text-[10px] uppercase tracking-wider text-text-muted">{g.status}</span>
+            <span className="text-[10px] uppercase tracking-wider text-text-muted">{g.audience}</span>
           </li>
         ))}
       </ul>
