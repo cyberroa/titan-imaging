@@ -397,8 +397,8 @@ async def admin_import_parts(
 
 @router.post("/outreach/preview", response_model=OutreachPreviewOut)
 def outreach_preview(body: OutreachPreviewIn, db: Session = Depends(get_db)):
+    from app.email_preview import render_inbox_preview
     from app.outreach import MAX_OUTREACH_AUDIENCE, resolve_outreach_audience, variables_for_recipient
-    from app.templating import template_to_text_html
 
     audience = resolve_outreach_audience(
         db,
@@ -416,7 +416,7 @@ def outreach_preview(body: OutreachPreviewIn, db: Session = Depends(get_db)):
 
     sample_email, sample_customer = audience[0]
     variables = variables_for_recipient(sample_email, sample_customer)
-    subject, html_out, text_out = template_to_text_html(
+    subject, html_out, text_out = render_inbox_preview(
         body.subject, body.body_md, body.body_html, variables
     )
     sample_name = sample_customer.name if sample_customer else sample_email

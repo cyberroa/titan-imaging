@@ -54,6 +54,12 @@ export const WORKBENCH_NAV_GROUPS: WorkbenchNavGroup[] = [
         requiredCapabilities: ["sales", "marketing"],
       },
       {
+        href: "/workbench/traffic",
+        label: "Site traffic",
+        detail: "Pages and sources",
+        requiredCapabilities: ["sales", "marketing"],
+      },
+      {
         href: "/workbench/insights",
         label: "Market Map",
         detail: "CRM graph exploration",

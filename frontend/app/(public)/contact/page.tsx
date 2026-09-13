@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendlyEmbed } from "@/components/CalendlyEmbed";
+import { CalEmbed } from "@/components/CalEmbed";
 import { ContactForm } from "@/components/forms/ContactForm";
 import { Container, Eyebrow, PageHero } from "@/components/ui";
 import { IMAGES } from "@/lib/images";
@@ -68,10 +68,10 @@ export default function ContactPage() {
               Ready to Schedule?
             </Eyebrow>
             <p className="mt-1 text-sm text-text-muted">
-              Book a call at a time that works for you (Calendly).
+              Book a call at a time that works for you.
             </p>
           </div>
-          <CalendlyEmbed />
+          <CalEmbed />
         </div>
       </Container>
     </>

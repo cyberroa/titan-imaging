@@ -13,6 +13,7 @@ from app.db import get_db
 from app.engagement import HOT_LEAD_THRESHOLD, compute_score, summarize_session_activity
 from app.models import BrowserSession, Customer, Event
 from app.schemas import HotLeadOut, LiveSessionCustomerOut, LiveSessionOut
+from app.site_stats import site_stats
 
 router = APIRouter(prefix="/workbench/sessions", dependencies=[Depends(get_current_workbench_user)])
 
@@ -28,13 +29,14 @@ def _customer_summary(c: Customer | None) -> LiveSessionCustomerOut | None:
     )
 
 
-@router.get("/live", response_model=list[LiveSessionOut])
-def list_live_sessions(
-    minutes: int = Query(default=15, ge=1, le=120),
-    db: Session = Depends(get_db),
-):
+@router.get("/traffic")
+def site_traffic(range: str = Query(default="30d"), db: Session = Depends(get_db)):
+    return site_stats(db, range)
+
+
+def live_visitors(db: Session, minutes: int = 15) -> list[LiveSessionOut]:
     now = dt.datetime.now(dt.timezone.utc)
-    since = now - dt.timedelta(minutes=minutes)
+    since = now - dt.timedelta(minutes=max(1, min(minutes, 120)))
 
     sessions = db.scalars(
         select(BrowserSession)
@@ -76,6 +78,14 @@ def list_live_sessions(
             )
         )
     return out
+
+
+@router.get("/live", response_model=list[LiveSessionOut])
+def list_live_sessions(
+    minutes: int = Query(default=15, ge=1, le=120),
+    db: Session = Depends(get_db),
+):
+    return live_visitors(db, minutes)
 
 
 @router.get("/hot-leads", response_model=list[HotLeadOut])

@@ -1,7 +1,5 @@
 "use client";
 
-import { getApiBaseUrl } from "@/lib/api";
-
 const COOKIE_NAME = "ti_sid";
 const CONSENT_NAME = "ti_consent";
 
@@ -80,7 +78,7 @@ export async function track(
     payload: { ...payload, referrer },
   });
 
-  const endpoint = `${getApiBaseUrl()}/api/v1/activity`;
+  const endpoint = "/api/pulse";
   try {
     if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
       const blob = new Blob([body], { type: "application/json" });

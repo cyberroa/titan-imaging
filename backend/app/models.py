@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import ARRAY, CITEXT, JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -228,6 +228,23 @@ class EmailTemplate(Base):
     )
 
 
+class MailDomain(Base):
+    __tablename__ = "mail_domains"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    hostname: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    from_email: Mapped[str] = mapped_column(String(320), nullable=False)
+    resend_domain_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    daily_cap: Mapped[int] = mapped_column(Integer, nullable=False, server_default="80")
+    warmup_stage: Mapped[str] = mapped_column(String(24), nullable=False, server_default="new")
+    sent_today: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
+    last_sent_date: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 class Campaign(Base):
     __tablename__ = "campaigns"
 
@@ -239,6 +256,13 @@ class Campaign(Base):
     segment_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("segments.id", ondelete="RESTRICT"), nullable=True
     )
+    mail_domain_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("mail_domains.id", ondelete="SET NULL"), nullable=True
+    )
+    previewed_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sequence_started_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sequence_ends_on: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
+    daily_quota: Mapped[int | None] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="draft")
     scheduled_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     sent_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -253,6 +277,7 @@ class Campaign(Base):
 
     template: Mapped["EmailTemplate"] = relationship()
     segment: Mapped["Segment | None"] = relationship()
+    mail_domain: Mapped["MailDomain | None"] = relationship()
     recipients: Mapped[list["CampaignRecipient"]] = relationship(
         back_populates="campaign", cascade="all, delete-orphan"
     )
@@ -275,6 +300,7 @@ class CampaignRecipient(Base):
     )
     email: Mapped[str] = mapped_column(CITEXT(), nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False, server_default="queued")
+    scheduled_for: Mapped[dt.date | None] = mapped_column(Date, nullable=True, index=True)
     resend_message_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[dt.datetime] = mapped_column(
@@ -431,6 +457,25 @@ class AiStudioRun(Base):
     )
 
 
+class AiEvalCase(Base):
+    __tablename__ = "ai_eval_cases"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("ai_studio_runs.id", ondelete="SET NULL"), nullable=True
+    )
+    task: Mapped[str] = mapped_column(String(24), nullable=False, server_default="email")
+    eval_split: Mapped[str] = mapped_column(String(16), nullable=False, server_default="dev", index=True)
+    system_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    user_prompt: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    context_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    gold_output: Mapped[str] = mapped_column(Text, nullable=False)
+    created_by: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
 # --------------------------------------------------------------------------
 # Phase J — opportunities + marketing goals
 # --------------------------------------------------------------------------
@@ -489,6 +534,26 @@ class MarketingGoal(Base):
 # --------------------------------------------------------------------------
 # Phase I — staff payroll
 # --------------------------------------------------------------------------
+
+
+class WorkbenchNotification(Base):
+    __tablename__ = "workbench_notifications"
+    __table_args__ = (UniqueConstraint("staff_id", "dedup_key", name="uq_workbench_notifications_staff_dedup"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    staff_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workbench_staff.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    kind: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    href: Mapped[str] = mapped_column(String(500), nullable=False, server_default="/workbench/analytics")
+    dedup_key: Mapped[str] = mapped_column(String(200), nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    read_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class WorkbenchFeedback(Base):

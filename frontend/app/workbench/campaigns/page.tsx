@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { CampaignProgressBar } from "@/components/workbench/CampaignProgressBar";
 import { WorkbenchPageHeader } from "@/components/ui";
 import { WorkbenchSelect } from "@/components/workbench/WorkbenchSelect";
 import { ApiError } from "@/lib/api";
@@ -17,9 +18,20 @@ type Campaign = {
   scheduled_at: string | null;
   sent_at: string | null;
   stats_json: Record<string, unknown>;
+  progress?: {
+    total: number;
+    sent: number;
+    remaining: number;
+    failed: number;
+    days: number;
+    day_index: number;
+    percent: number;
+  };
   created_by: string | null;
   created_at: string;
 };
+
+type MailDomain = { id: string; hostname: string; from_email: string; daily_cap: number };
 
 type Template = { id: string; name: string; slug: string; subject: string };
 type Segment = { id: string; name: string; slug: string };
@@ -35,19 +47,23 @@ export default function AdminCampaignsPage() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [domains, setDomains] = useState<MailDomain[]>([]);
+  const [domainForm, setDomainForm] = useState({ hostname: "", from_email: "", daily_cap: "80" });
 
   const load = useCallback(async (t: string) => {
     setLoading(true);
     setError(null);
     try {
-      const [c, tpls, segs] = await Promise.all([
+      const [c, tpls, segs, md] = await Promise.all([
         apiFetchWithAuth<Campaign[]>("/api/v1/workbench/campaigns", t),
         apiFetchWithAuth<Template[]>("/api/v1/workbench/templates", t),
         apiFetchWithAuth<{ items: Segment[] }>("/api/v1/workbench/segments?limit=100", t),
+        apiFetchWithAuth<MailDomain[]>("/api/v1/workbench/mail-domains", t),
       ]);
       setRows(c);
       setTemplates(tpls);
       setSegments(segs.items);
+      setDomains(md);
     } catch (e) {
       setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Failed to load");
     } finally {
@@ -88,9 +104,28 @@ export default function AdminCampaignsPage() {
     }
   }
 
+  async function createDomain(e: React.FormEvent) {
+    e.preventDefault();
+    if (!token) return;
+    try {
+      await apiFetchWithAuth("/api/v1/workbench/mail-domains", token, {
+        method: "POST",
+        body: JSON.stringify({
+          hostname: domainForm.hostname.trim(),
+          from_email: domainForm.from_email.trim(),
+          daily_cap: Number(domainForm.daily_cap) || 80,
+        }),
+      });
+      setDomainForm({ hostname: "", from_email: "", daily_cap: "80" });
+      await load(token);
+    } catch (err) {
+      setError(err instanceof ApiError ? JSON.stringify(err.body ?? err.message) : "Domain save failed");
+    }
+  }
+
   async function send(id: string) {
     if (!token) return;
-    if (!confirm("Send this campaign now? This cannot be undone.")) return;
+    if (!confirm("Send this campaign now? Preview the HTML on the campaign page first. This cannot be undone.")) return;
     setSendingId(id);
     setError(null);
     try {
@@ -123,7 +158,7 @@ export default function AdminCampaignsPage() {
       <WorkbenchPageHeader
         eyebrow="Email"
         title="Campaigns"
-        description="Pick a template, pick a segment, send. Suppressed contacts are automatically skipped."
+        description="Preview HTML, arm a sequenced send from a mail-only domain, or send immediately after preview."
       />
 
       <div className="mt-10 rounded-xl border border-white/10 bg-background-card p-6">
@@ -176,6 +211,45 @@ export default function AdminCampaignsPage() {
         </form>
       </div>
 
+      <div className="mt-6 rounded-xl border border-white/10 bg-background-card p-6">
+        <h2 className="text-lg font-semibold">Mail-only sending domains</h2>
+        <p className="mt-1 text-sm text-white/45">
+          Use a purchased domain that is not the public site. Verify SPF/DKIM in Resend first.
+        </p>
+        <ul className="mt-3 text-sm text-white/70">
+          {domains.map((d) => (
+            <li key={d.id}>
+              {d.hostname} · {d.from_email} · cap {d.daily_cap}/day
+            </li>
+          ))}
+        </ul>
+        <form onSubmit={(e) => void createDomain(e)} className="mt-4 grid gap-3 sm:grid-cols-3">
+          <input
+            required
+            placeholder="mailbrand.example"
+            className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm"
+            value={domainForm.hostname}
+            onChange={(e) => setDomainForm((f) => ({ ...f, hostname: e.target.value }))}
+          />
+          <input
+            required
+            type="email"
+            placeholder="hello@mailbrand.example"
+            className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm"
+            value={domainForm.from_email}
+            onChange={(e) => setDomainForm((f) => ({ ...f, from_email: e.target.value }))}
+          />
+          <input
+            className="rounded-md border border-white/10 bg-black/40 px-3 py-2 text-sm"
+            value={domainForm.daily_cap}
+            onChange={(e) => setDomainForm((f) => ({ ...f, daily_cap: e.target.value }))}
+          />
+          <button type="submit" className="rounded-lg border border-white/15 px-4 py-2 text-sm sm:col-span-3">
+            Add domain
+          </button>
+        </form>
+      </div>
+
       {error ? (
         <p className="mt-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {error}
@@ -188,7 +262,7 @@ export default function AdminCampaignsPage() {
             <tr>
               <th className="px-4 py-3 font-semibold">Name</th>
               <th className="px-4 py-3 font-semibold">Status</th>
-              <th className="px-4 py-3 font-semibold">Stats</th>
+              <th className="px-4 py-3 font-semibold">Progress</th>
               <th className="px-4 py-3 font-semibold">Created</th>
               <th className="px-4 py-3 font-semibold" />
             </tr>
@@ -208,10 +282,6 @@ export default function AdminCampaignsPage() {
               </tr>
             ) : (
               rows.map((c) => {
-                const s = (c.stats_json || {}) as Record<string, unknown>;
-                const sent = typeof s.sent === "number" ? s.sent : 0;
-                const queued = typeof s.queued === "number" ? s.queued : 0;
-                const failed = typeof s.failed === "number" ? s.failed : 0;
                 return (
                   <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                     <td className="px-4 py-3">
@@ -223,8 +293,8 @@ export default function AdminCampaignsPage() {
                       </Link>
                     </td>
                     <td className="px-4 py-3 text-text-muted">{c.status}</td>
-                    <td className="px-4 py-3 text-xs text-text-muted">
-                      queued {queued} · sent {sent} · failed {failed}
+                    <td className="px-4 py-3">
+                      <CampaignProgressBar progress={c.progress} />
                     </td>
                     <td className="px-4 py-3 text-xs text-text-muted">
                       {new Date(c.created_at).toLocaleDateString()}

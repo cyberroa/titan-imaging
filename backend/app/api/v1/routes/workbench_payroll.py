@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.ai.engagement import LEAD_STAGES
 from app.auth import WorkbenchUser, get_current_workbench_user
 from app.db import get_db
 from app.models import (
@@ -195,7 +196,26 @@ def list_role_options():
 def list_staff(db: Session = Depends(get_db), admin: WorkbenchUser = Depends(get_current_workbench_user)):
     _ensure_staff(db, admin)
     rows = db.execute(select(WorkbenchStaff).order_by(WorkbenchStaff.email.asc())).scalars().all()
-    return [_staff_out(s) for s in rows]
+    out = []
+    for s in rows:
+        d = _staff_out(s)
+        assignment = get_active_assignment(db, s.id)
+        pending = db.scalar(
+            select(StaffPayAssignment)
+            .where(
+                StaffPayAssignment.staff_id == s.id,
+                StaffPayAssignment.status == "pending_acceptance",
+            )
+            .order_by(StaffPayAssignment.assigned_at.desc())
+        )
+        pkg = assignment or pending
+        if pkg:
+            p = db.get(PayPolicy, pkg.policy_id)
+            if p:
+                d["pay_commission_applies_to"] = p.commission_applies_to
+                d["pay_policy_name"] = p.name
+        out.append(d)
+    return out
 
 
 @router.post("/staff")
@@ -258,21 +278,7 @@ def update_staff(
 @router.get("/pay-policies")
 def list_policies(db: Session = Depends(get_db)):
     rows = db.execute(select(PayPolicy).order_by(PayPolicy.created_at.desc())).scalars().all()
-    return [
-        {
-            "id": str(p.id),
-            "name": p.name,
-            "version": p.version,
-            "active": p.active,
-            "is_default": p.is_default,
-            "commission_rate_bps": p.commission_rate_bps,
-            "commission_applies_to": p.commission_applies_to,
-            "hourly_rate_cents": p.hourly_rate_cents,
-            "currency": p.currency,
-            "terms_markdown": p.terms_markdown,
-        }
-        for p in rows
-    ]
+    return [_policy_out(p) for p in rows]
 
 
 @router.post("/pay-policies")
@@ -283,6 +289,12 @@ def create_policy(
 ):
     me = _ensure_staff(db, admin)
     require_owner_tier(me)
+    applies = (body.get("commission_applies_to") or "lead_owner")[:24]
+    if applies not in ("lead_owner", "closer", "both_split"):
+        raise HTTPException(
+            status_code=400,
+            detail="commission_applies_to must be lead_owner, closer, or both_split",
+        )
     p = PayPolicy(
         id=uuid.uuid4(),
         name=(body.get("name") or "Default Package")[:200],
@@ -290,7 +302,7 @@ def create_policy(
         active=True,
         is_default=bool(body.get("is_default")),
         commission_rate_bps=int(body.get("commission_rate_bps") or 500),
-        commission_applies_to=(body.get("commission_applies_to") or "closer")[:24],
+        commission_applies_to=applies,
         hourly_rate_cents=int(body.get("hourly_rate_cents") or 0),
         currency=(body.get("currency") or "USD")[:3],
         terms_markdown=(body.get("terms_markdown") or "")[:20_000],
@@ -301,6 +313,62 @@ def create_policy(
     db.add(p)
     db.commit()
     return {"id": str(p.id)}
+
+
+def _policy_out(p: PayPolicy) -> dict[str, Any]:
+    return {
+        "id": str(p.id),
+        "name": p.name,
+        "version": p.version,
+        "active": p.active,
+        "is_default": p.is_default,
+        "commission_rate_bps": p.commission_rate_bps,
+        "commission_applies_to": p.commission_applies_to,
+        "hourly_rate_cents": p.hourly_rate_cents,
+        "currency": p.currency,
+        "terms_markdown": p.terms_markdown,
+    }
+
+
+@router.patch("/pay-policies/{policy_id}")
+def update_policy(
+    policy_id: str,
+    body: dict[str, Any],
+    db: Session = Depends(get_db),
+    admin: WorkbenchUser = Depends(get_current_workbench_user),
+):
+    me = _ensure_staff(db, admin)
+    require_owner_tier(me)
+    p = db.get(PayPolicy, policy_id)
+    if not p:
+        raise HTTPException(status_code=404, detail="Pay package not found")
+    if "name" in body and body["name"]:
+        p.name = str(body["name"])[:200]
+    if "commission_rate_bps" in body:
+        p.commission_rate_bps = int(body["commission_rate_bps"] or 0)
+    if "commission_applies_to" in body and body["commission_applies_to"]:
+        applies = str(body["commission_applies_to"])[:24]
+        if applies not in ("lead_owner", "closer", "both_split"):
+            raise HTTPException(status_code=400, detail="commission_applies_to must be lead_owner, closer, or both_split")
+        p.commission_applies_to = applies
+    if "hourly_rate_cents" in body:
+        p.hourly_rate_cents = int(body["hourly_rate_cents"] or 0)
+    if "currency" in body and body["currency"]:
+        p.currency = str(body["currency"])[:3].upper()
+    if "terms_markdown" in body:
+        p.terms_markdown = str(body["terms_markdown"] or "")[:20_000]
+    if "active" in body:
+        p.active = bool(body["active"])
+    if body.get("is_default"):
+        for row in db.execute(select(PayPolicy).where(PayPolicy.is_default.is_(True))).scalars():
+            row.is_default = False
+        p.is_default = True
+    elif "is_default" in body:
+        p.is_default = False
+    p.version = int(p.version or 1) + 1
+    db.commit()
+    db.refresh(p)
+    return _policy_out(p)
 
 
 @router.post("/staff/{staff_id}/pay-assignment")
@@ -360,19 +428,185 @@ def accept_assignment(
 # --- Sales conversions ---
 
 
+def _range_bounds(from_date: str | None, to_date: str | None, *, default_days: int = 30) -> tuple[dt.date, dt.date]:
+    end = dt.date.fromisoformat(to_date) if to_date else dt.date.today()
+    if from_date:
+        start = dt.date.fromisoformat(from_date)
+    else:
+        start = end - dt.timedelta(days=default_days - 1)
+    return start, end
+
+
+def _staff_label(db: Session, staff_id: uuid.UUID | None) -> str:
+    if not staff_id:
+        return "Unassigned"
+    s = db.get(WorkbenchStaff, staff_id)
+    if not s:
+        return "Unknown"
+    return s.display_name or s.email
+
+
+def _median(values: list[float]) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return float(ordered[mid])
+    return (ordered[mid - 1] + ordered[mid]) / 2.0
+
+
+@router.get("/sales/summary")
+def sales_summary(
+    db: Session = Depends(get_db),
+    admin: WorkbenchUser = Depends(get_current_workbench_user),
+    from_date: str | None = None,
+    to_date: str | None = None,
+):
+    me = _ensure_staff(db, admin)
+    require_any_capability(me, "sales")
+    start, end = _range_bounds(from_date, to_date)
+    start_dt = dt.datetime.combine(start, dt.time.min, tzinfo=dt.timezone.utc)
+    end_dt = dt.datetime.combine(end, dt.time.max, tzinfo=dt.timezone.utc)
+
+    rows = list(
+        db.execute(
+            select(SaleConversion, Customer)
+            .join(Customer, Customer.id == SaleConversion.customer_id)
+            .where(
+                SaleConversion.closed_at >= start_dt,
+                SaleConversion.closed_at <= end_dt,
+                SaleConversion.status != "void",
+            )
+        ).all()
+    )
+
+    won = [(c, cust) for c, cust in rows if c.status == "won"]
+    lost = [(c, cust) for c, cust in rows if c.status == "lost"]
+    won_cents = sum(c.amount_cents for c, _ in won)
+    won_count = len(won)
+    lost_count = len(lost)
+    avg_deal = int(won_cents / won_count) if won_count else 0
+
+    days_list: list[float] = []
+    for c, cust in won:
+        created = cust.created_at
+        closed = c.closed_at
+        if created and closed:
+            if created.tzinfo is None:
+                created = created.replace(tzinfo=dt.timezone.utc)
+            if closed.tzinfo is None:
+                closed = closed.replace(tzinfo=dt.timezone.utc)
+            delta = (closed - created).total_seconds() / 86400
+            if delta >= 0:
+                days_list.append(delta)
+
+    stage_rows = db.execute(select(Customer.lead_stage, func.count()).group_by(Customer.lead_stage)).all()
+    pipeline = {s: 0 for s in LEAD_STAGES}
+    for stage, count in stage_rows:
+        key = stage if stage in pipeline else "new"
+        pipeline[key] = int(count)
+    open_leads = sum(pipeline[s] for s in LEAD_STAGES if s not in ("won", "lost"))
+    pipeline_won = pipeline.get("won", 0)
+
+    if lost_count > 0:
+        win_rate = won_count / (won_count + lost_count)
+        win_rate_label = "closed_won_lost"
+    else:
+        denom = open_leads + pipeline_won
+        win_rate = (pipeline_won / denom) if denom else 0.0
+        win_rate_label = "won_vs_open_pipeline"
+
+    by_source: dict[str, dict[str, int]] = {}
+    for c, _ in won:
+        key = (c.source_type or "unattributed").strip() or "unattributed"
+        bucket = by_source.setdefault(key, {"won_cents": 0, "count": 0})
+        bucket["won_cents"] += c.amount_cents
+        bucket["count"] += 1
+
+    weekly: list[dict[str, Any]] = []
+    week0 = start - dt.timedelta(days=start.weekday())
+    cursor = week0
+    while cursor <= end:
+        w_end = cursor + dt.timedelta(days=6)
+        w_start_dt = dt.datetime.combine(cursor, dt.time.min, tzinfo=dt.timezone.utc)
+        w_end_dt = dt.datetime.combine(min(w_end, end), dt.time.max, tzinfo=dt.timezone.utc)
+        w_rows = [c for c, _ in won if c.closed_at >= w_start_dt and c.closed_at <= w_end_dt]
+        weekly.append(
+            {
+                "week_start": cursor.isoformat(),
+                "won_cents": sum(x.amount_cents for x in w_rows),
+                "won_count": len(w_rows),
+            }
+        )
+        cursor += dt.timedelta(days=7)
+
+    out: dict[str, Any] = {
+        "from": start.isoformat(),
+        "to": end.isoformat(),
+        "kpis": {
+            "won_cents": won_cents,
+            "won_count": won_count,
+            "avg_deal_cents": avg_deal,
+            "lost_count": lost_count,
+            "win_rate": round(win_rate, 4),
+            "win_rate_label": win_rate_label,
+            "median_days_to_close": round(_median(days_list), 1) if days_list else None,
+            "open_leads": open_leads,
+        },
+        "weekly": weekly,
+        "by_source": [
+            {"source": k, "won_cents": v["won_cents"], "count": v["count"]}
+            for k, v in sorted(by_source.items(), key=lambda x: -x[1]["won_cents"])
+        ],
+    }
+
+    if is_owner_tier(me):
+        split = [(c, cust) for c, cust in won if c.closer_staff_id and c.lead_owner_staff_id and c.closer_staff_id != c.lead_owner_staff_id]
+        split_cents = sum(c.amount_cents for c, _ in split)
+        by_closer: dict[str, dict[str, Any]] = {}
+        by_owner: dict[str, dict[str, Any]] = {}
+        for c, _ in won:
+            cid = str(c.closer_staff_id) if c.closer_staff_id else "none"
+            closer = by_closer.setdefault(
+                cid, {"staff_id": cid if cid != "none" else None, "name": _staff_label(db, c.closer_staff_id), "won_cents": 0, "count": 0}
+            )
+            closer["won_cents"] += c.amount_cents
+            closer["count"] += 1
+            oid = str(c.lead_owner_staff_id) if c.lead_owner_staff_id else "none"
+            owner = by_owner.setdefault(
+                oid, {"staff_id": oid if oid != "none" else None, "name": _staff_label(db, c.lead_owner_staff_id), "won_cents": 0, "count": 0}
+            )
+            owner["won_cents"] += c.amount_cents
+            owner["count"] += 1
+        out["pipeline"] = pipeline
+        out["attribution"] = {
+            "split_credit_cents": split_cents,
+            "split_credit_pct": round(split_cents / won_cents, 4) if won_cents else 0.0,
+            "split_count": len(split),
+            "by_closer": sorted(by_closer.values(), key=lambda x: -x["won_cents"])[:12],
+            "by_lead_owner": sorted(by_owner.values(), key=lambda x: -x["won_cents"])[:12],
+        }
+    return out
+
+
 @router.get("/sales/conversions")
 def list_conversions(
     db: Session = Depends(get_db),
     admin: WorkbenchUser = Depends(get_current_workbench_user),
     limit: int = Query(default=100, le=500),
+    from_date: str | None = None,
+    to_date: str | None = None,
 ):
     me = _ensure_staff(db, admin)
     require_any_capability(me, "sales")
-    rows = (
-        db.execute(select(SaleConversion).order_by(SaleConversion.closed_at.desc()).limit(limit))
-        .scalars()
-        .all()
-    )
+    q = select(SaleConversion).where(SaleConversion.status != "void")
+    if from_date or to_date:
+        start, end = _range_bounds(from_date, to_date)
+        start_dt = dt.datetime.combine(start, dt.time.min, tzinfo=dt.timezone.utc)
+        end_dt = dt.datetime.combine(end, dt.time.max, tzinfo=dt.timezone.utc)
+        q = q.where(SaleConversion.closed_at >= start_dt, SaleConversion.closed_at <= end_dt)
+    rows = db.execute(q.order_by(SaleConversion.closed_at.desc()).limit(limit)).scalars().all()
     out = []
     for c in rows:
         cust = db.get(Customer, c.customer_id)
@@ -412,6 +646,15 @@ def create_conversion(
     else:
         closed_at = dt.datetime.now(dt.timezone.utc)
 
+    status = (body.get("status") or "won")[:24]
+    lead_owner_staff_id = (
+        uuid.UUID(body["lead_owner_staff_id"]) if body.get("lead_owner_staff_id") else None
+    )
+    if status == "won" and not lead_owner_staff_id:
+        raise HTTPException(
+            status_code=400,
+            detail="lead_owner_staff_id required so marketing staff get conversion credit when someone else closes",
+        )
     conv = SaleConversion(
         id=uuid.uuid4(),
         customer_id=cust.id,
@@ -420,10 +663,8 @@ def create_conversion(
         amount_cents=int(body.get("amount_cents") or 0),
         currency=(body.get("currency") or "USD")[:3],
         closed_at=closed_at,
-        status=(body.get("status") or "won")[:24],
-        lead_owner_staff_id=uuid.UUID(body["lead_owner_staff_id"])
-        if body.get("lead_owner_staff_id")
-        else None,
+        status=status,
+        lead_owner_staff_id=lead_owner_staff_id,
         closer_staff_id=uuid.UUID(body["closer_staff_id"]) if body.get("closer_staff_id") else me.id,
         notes=body.get("notes"),
         created_by_staff_id=me.id,

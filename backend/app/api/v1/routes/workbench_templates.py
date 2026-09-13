@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import get_current_workbench_user
 from app.db import get_db
-from app.models import EmailTemplate, Segment
+from app.models import Customer, EmailTemplate, Segment
 from app.customer_search import search_segments
 from app.schemas import (
     OkOut,
@@ -25,7 +25,8 @@ from app.schemas import (
     TemplateUpdate,
 )
 from app.segments import segment_count, segment_customers
-from app.templating import template_to_text_html
+from app.customer_utils import customer_template_variables
+from app.email_preview import render_inbox_preview
 
 router = APIRouter(prefix="/workbench", dependencies=[Depends(get_current_workbench_user)])
 
@@ -138,12 +139,19 @@ def preview_template(
     t = db.get(EmailTemplate, template_id)
     if not t:
         raise HTTPException(status_code=404, detail="Template not found")
-    sample = body.sample or {
-        "name": "Jane Doe",
-        "company": "St. Mary's Radiology",
-        "email": "jane@example.com",
-    }
-    subject, html_out, text_out = template_to_text_html(
+    sample = dict(body.sample or {})
+    if body.customer_id:
+        cust = db.get(Customer, body.customer_id)
+        if not cust:
+            raise HTTPException(status_code=404, detail="Customer not found")
+        sample = {**customer_template_variables(cust), **sample}
+    if not sample:
+        sample = {
+            "name": "Jane Doe",
+            "company": "St. Mary's Radiology",
+            "email": "jane@example.com",
+        }
+    subject, html_out, text_out = render_inbox_preview(
         t.subject, t.body_md, t.body_html, sample
     )
     return TemplatePreviewOut(subject=subject, html=html_out, text=text_out)

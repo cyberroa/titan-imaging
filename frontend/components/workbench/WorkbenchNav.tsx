@@ -14,6 +14,7 @@ import {
 import { apiFetchWithAuth } from '@/lib/api-workbench';
 import { createClient } from "@/lib/supabase/client";
 import { WorkbenchHelpFlyout } from "@/components/workbench/WorkbenchHelpFlyout";
+import { WorkbenchNotificationsFlyout } from "@/components/workbench/WorkbenchNotificationsFlyout";
 import { cn } from "@/lib/cn";
 
 function Chevron({ open }: { open: boolean }) {
@@ -237,6 +238,7 @@ export function WorkbenchNav() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <WorkbenchNotificationsFlyout />
           <WorkbenchHelpFlyout />
           <Link
             href="/"

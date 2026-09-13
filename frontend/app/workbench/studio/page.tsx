@@ -11,7 +11,7 @@ import {
   type StudioSegmentRef,
 } from "@/components/workbench/StudioContextPickers";
 import { StudioFloatingMenu } from "@/components/workbench/StudioFloatingMenu";
-import { StudioAgentResult } from "@/components/workbench/StudioAgentResult";
+import { StudioAgentResult, type StudioAgentResultData } from "@/components/workbench/StudioAgentResult";
 import { WorkbenchSelect } from "@/components/workbench/WorkbenchSelect";
 import {
   MARKETING_DESIGN_PRESETS,
@@ -49,14 +49,7 @@ type Run = {
 
 type Mode = "text" | "image" | "agent";
 
-type AgentResult = {
-  engagement: { id: string; outcome: string; summary: string; suggested_stage?: string | null; applied_stage?: string | null };
-  lead_stage: string;
-  fit_scores: { offer_family: string; score: number; reasons: string[] }[];
-  next_actions: { id: string; label: string; href?: string }[];
-  draft_sale: { customer_id: string; amount_cents: number | null; source_id: string; confirm_required: boolean } | null;
-  message: string;
-};
+type AgentResult = StudioAgentResultData;
 
 const SUGGESTIONS = [
   "Warm-lead nurture email for a hospital GE PET/CT parts inquiry",
@@ -190,6 +183,8 @@ function AdminAiStudioPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promoteName, setPromoteName] = useState("AI Draft");
+  const [lastRunId, setLastRunId] = useState<string | null>(null);
+  const [goldSaved, setGoldSaved] = useState(false);
   const [contextSegment, setContextSegment] = useState<StudioSegmentRef | null>(null);
   const [contextCustomer, setContextCustomer] = useState<StudioCustomerRef | null>(null);
   const [mode, setMode] = useState<Mode>("text");
@@ -278,6 +273,14 @@ function AdminAiStudioPageInner() {
     };
   }, [token, searchParams]);
 
+  function stopMic() {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setListening(false);
+  }
+
   function toggleMic() {
     type RecResult = { isFinal: boolean; 0: { transcript: string }; length: number };
     type Rec = {
@@ -300,9 +303,7 @@ function AdminAiStudioPageInner() {
       return;
     }
     if (listening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-      setListening(false);
+      stopMic();
       return;
     }
     // Snapshot existing draft so interim partials replace the live utterance instead of stacking.
@@ -341,6 +342,10 @@ function AdminAiStudioPageInner() {
     setListening(true);
     setError(null);
   }
+
+  useEffect(() => {
+    stopMic();
+  }, [mode]);
 
   useEffect(() => {
     if (!modelOpen && !designOpen && !presetsOpen) return;
@@ -461,6 +466,8 @@ function AdminAiStudioPageInner() {
     setDesignPresetId(null);
     setActivePresetId(null);
     setPromoteName("AI Draft");
+    setLastRunId(null);
+    setGoldSaved(false);
     textareaRef.current?.focus();
   }
 
@@ -470,43 +477,49 @@ function AdminAiStudioPageInner() {
     setError(null);
     try {
       if (mode === "agent") {
-        if (!contextCustomer && !pasteEmailMode) {
-          setError("Select a customer (or paste an email thread that includes their address).");
-          setLoading(false);
-          return;
-        }
         const endpoint = pasteEmailMode
           ? "/api/v1/workbench/ai/studio/email-paste"
           : "/api/v1/workbench/ai/studio/agent";
-        const res = await apiFetchWithAuth<AgentResult>(endpoint, token, {
-          method: "POST",
-          body: JSON.stringify({
-            text: userPrompt,
-            raw_email: pasteEmailMode ? userPrompt : undefined,
-            channel: pasteEmailMode ? "email_paste" : "studio_agent",
-            transcript: !pasteEmailMode ? userPrompt : undefined,
-            customer_id: contextCustomer?.id,
-            context: {
-              ...(contextSegment ? { segment_id: contextSegment.id } : {}),
-              ...(contextCustomer ? { customer_id: contextCustomer.id } : {}),
-            },
-          }),
-        });
-        setAgentResult(res);
-        setOutput(
-          [
-            res.message,
-            `Stage: ${res.lead_stage}`,
-            `Outcome: ${res.engagement.outcome}`,
-            res.engagement.summary,
-            res.fit_scores?.length
-              ? `Fit: ${res.fit_scores.map((f) => `${f.offer_family} ${f.score.toFixed(0)}`).join(", ")}`
-              : "",
-          ]
-            .filter(Boolean)
-            .join("\n\n"),
-        );
-        setImageUrl(null);
+        try {
+          const res = await apiFetchWithAuth<AgentResult>(endpoint, token, {
+            method: "POST",
+            body: JSON.stringify({
+              text: userPrompt,
+              raw_email: pasteEmailMode ? userPrompt : undefined,
+              channel: pasteEmailMode ? "email_paste" : "studio_agent",
+              transcript: !pasteEmailMode ? userPrompt : undefined,
+              customer_id: contextCustomer?.id,
+              model,
+              system: systemPrompt,
+              context: {
+                ...(contextSegment ? { segment_id: contextSegment.id } : {}),
+                ...(contextCustomer ? { customer_id: contextCustomer.id } : {}),
+              },
+            }),
+          });
+          setAgentResult(res);
+          setOutput(res.output_text || res.message || "");
+          setImageUrl(null);
+          setLastRunId(res.run_id ?? null);
+          setGoldSaved(false);
+        } catch (err) {
+          if (err instanceof ApiError) {
+            const body = err.body as { detail?: AgentResult | string } | undefined;
+            const detail = body && typeof body === "object" ? body.detail : undefined;
+            if (detail && typeof detail === "object" && Array.isArray(detail.customers)) {
+              setAgentResult({
+                intent: "lookup",
+                message: detail.message || "Matching accounts",
+                customers: detail.customers,
+                next_actions: [],
+              });
+              setOutput("");
+              setImageUrl(null);
+              return;
+            }
+          }
+          throw err;
+        }
       } else if (mode === "image") {
         const res = await apiFetchWithAuth<{ output_image_url: string }>(
           "/api/v1/workbench/ai/studio/image",
@@ -517,7 +530,7 @@ function AdminAiStudioPageInner() {
         setOutput("");
         setAgentResult(null);
       } else {
-        const res = await apiFetchWithAuth<{ output_text: string }>(
+        const res = await apiFetchWithAuth<{ output_text: string; id: string }>(
           "/api/v1/workbench/ai/studio/complete",
           token,
           {
@@ -534,6 +547,8 @@ function AdminAiStudioPageInner() {
           },
         );
         setOutput(res.output_text);
+        setLastRunId(res.id);
+        setGoldSaved(false);
         setAgentResult(null);
       }
       await load(token);
@@ -557,10 +572,41 @@ function AdminAiStudioPageInner() {
           name: promoteName,
           image_url: imageUrl,
           segment_id: contextSegment?.id || undefined,
+          run_id: lastRunId,
+          save_as_gold: target === "template" || target === "campaign",
+          user: userPrompt,
+          system: systemPrompt,
+          context: {
+            ...(contextSegment ? { segment_id: contextSegment.id } : {}),
+            ...(contextCustomer ? { customer_id: contextCustomer.id } : {}),
+          },
         }),
       },
     );
     alert(`Created ${res.type}: ${res.id}`);
+    if (target === "template" || target === "campaign") setGoldSaved(true);
+  }
+
+  async function saveGold() {
+    if (!token || !output.trim()) return;
+    try {
+      await apiFetchWithAuth("/api/v1/workbench/ai/studio/gold", token, {
+        method: "POST",
+        body: JSON.stringify({
+          gold_output: output,
+          run_id: lastRunId,
+          user: userPrompt,
+          system: systemPrompt,
+          context: {
+            ...(contextSegment ? { segment_id: contextSegment.id } : {}),
+            ...(contextCustomer ? { customer_id: contextCustomer.id } : {}),
+          },
+        }),
+      });
+      setGoldSaved(true);
+    } catch (e) {
+      setError(e instanceof ApiError ? JSON.stringify(e.body ?? e.message) : "Could not save gold");
+    }
   }
 
   const ready = status?.configured;
@@ -671,9 +717,9 @@ function AdminAiStudioPageInner() {
                       setDesignPresetId(null);
                       setActivePresetId(null);
                     }}
-                    rows={3}
+                    rows={10}
                     placeholder="Optional system instructions…"
-                    className="mb-3 w-full resize-none rounded-xl bg-black/45 px-3.5 py-3 text-sm text-white outline-none placeholder:text-white/45"
+                    className="mb-3 min-h-[14rem] w-full resize-y rounded-xl bg-black/45 px-3.5 py-3 text-sm text-white outline-none placeholder:text-white/45"
                   />
                 </div>
               )}
@@ -699,7 +745,7 @@ function AdminAiStudioPageInner() {
                       : mode === "agent"
                         ? pasteEmailMode
                           ? "Paste a full email thread (From/To/body) to summarize and score…"
-                          : "Describe the call or meeting in your own words — or use the mic…"
+                          : "Speak or type: log a call, draft an email, find an account, queue research, or save a note…"
                         : "What marketing email, social post, or outreach shall we write?"
                   }
                   className="w-full resize-none rounded-xl bg-black/45 px-3.5 py-3 text-base leading-relaxed text-white outline-none placeholder:text-white/45 md:text-[17px]"
@@ -753,7 +799,7 @@ function AdminAiStudioPageInner() {
                     <button
                       type="button"
                       onClick={() => setMode("agent")}
-                      title="Log customer engagements by voice or text"
+                      title="Log, draft, look up, research, or note by voice or text"
                       className={cn(
                         "rounded-full px-3 py-1.5 text-sm font-medium transition",
                         mode === "agent" ? "bg-white text-black" : "text-white/65 hover:text-white",
@@ -763,35 +809,39 @@ function AdminAiStudioPageInner() {
                     </button>
                   </div>
                   {mode === "agent" ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setPasteEmailMode((v) => !v)}
-                        className={cn(
-                          "rounded-full px-3 py-1.5 text-xs font-medium transition",
-                          pasteEmailMode
-                            ? "bg-accent-admin/20 text-accent-admin"
-                            : "text-white/55 hover:text-white",
-                        )}
-                      >
-                        {pasteEmailMode ? "Email paste on" : "Paste email"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleMic()}
-                        className={cn(
-                          "inline-flex h-9 w-9 items-center justify-center rounded-full transition",
-                          listening
-                            ? "bg-red-500 text-white"
-                            : "text-white/70 hover:bg-white/10 hover:text-white",
-                        )}
-                        title={listening ? "Stop listening" : "Speak to Agent"}
-                        aria-pressed={listening}
-                      >
-                        <IconMic className="h-4 w-4" />
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={() => setPasteEmailMode((v) => !v)}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-xs font-medium transition",
+                        pasteEmailMode
+                          ? "bg-accent-admin/20 text-accent-admin"
+                          : "text-white/55 hover:text-white",
+                      )}
+                    >
+                      {pasteEmailMode ? "Email paste on" : "Paste email"}
+                    </button>
                   ) : null}
+                  <button
+                    type="button"
+                    onClick={() => toggleMic()}
+                    className={cn(
+                      "inline-flex h-9 w-9 items-center justify-center rounded-full transition",
+                      listening
+                        ? "bg-red-500 text-white"
+                        : "text-white/70 hover:bg-white/10 hover:text-white",
+                    )}
+                    title={
+                      listening
+                        ? "Stop listening"
+                        : mode === "agent"
+                          ? "Speak to Agent"
+                          : "Speak"
+                    }
+                    aria-pressed={listening}
+                  >
+                    <IconMic className="h-4 w-4" />
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-1.5">
@@ -817,6 +867,7 @@ function AdminAiStudioPageInner() {
                     </button>
                     <StudioFloatingMenu
                       open={presetsOpen}
+                      anchorRef={presetsRef}
                       onClose={() => {
                         setPresetsOpen(false);
                         setSavePresetOpen(false);
@@ -967,6 +1018,7 @@ function AdminAiStudioPageInner() {
                     </button>
                     <StudioFloatingMenu
                       open={designOpen}
+                      anchorRef={designRef}
                       onClose={() => setDesignOpen(false)}
                       id={designMenuId}
                       label="Design.md marketing presets"
@@ -1060,11 +1112,12 @@ function AdminAiStudioPageInner() {
                     </button>
                     <StudioFloatingMenu
                       open={modelOpen}
+                      anchorRef={modelRef}
                       onClose={() => setModelOpen(false)}
                       id={modelMenuId}
                       role="listbox"
                       label="Models"
-                      className="relative z-[201] w-full max-w-sm overflow-auto rounded-xl border border-white/15 bg-[#0a0a0a] py-1 text-white shadow-[0_24px_80px_rgba(0,0,0,1)]"
+                      className="py-1"
                     >
                         {(status?.allowed_models ?? []).map((m) => {
                           const selected = m === model;
@@ -1160,14 +1213,29 @@ function AdminAiStudioPageInner() {
         ) : null}
 
         {/* Results */}
-        {(output || imageUrl) && (
+        {(output || imageUrl || (mode === "agent" && agentResult)) && (
           <section className="mt-12 w-full space-y-4">
             {mode === "agent" && agentResult ? (
               <StudioAgentResult
                 result={agentResult}
-                customerHref={contextCustomer ? `/workbench/customers/${contextCustomer.id}` : null}
+                customerHref={
+                  contextCustomer
+                    ? `/workbench/customers/${contextCustomer.id}`
+                    : agentResult.customers?.[0]
+                      ? `/workbench/customers/${agentResult.customers[0].id}`
+                      : null
+                }
+                onPickCustomer={async (id) => {
+                  if (!token) return;
+                  const cust = await apiFetchWithAuth<StudioCustomerRef>(
+                    `/api/v1/workbench/customers/${id}`,
+                    token,
+                  );
+                  setContextCustomer(cust);
+                }}
               />
-            ) : (
+            ) : null}
+            {(imageUrl || (output && (mode !== "agent" || agentResult?.intent === "draft_copy"))) && (
             <div className="rounded-[1.5rem] border border-white/10 bg-[#25252b]/80 p-5 shadow-xl backdrop-blur">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold text-white/70">Output</h2>
@@ -1181,7 +1249,10 @@ function AdminAiStudioPageInner() {
               {output && (
                 <textarea
                   value={output}
-                  onChange={(e) => setOutput(e.target.value)}
+                  onChange={(e) => {
+                    setOutput(e.target.value);
+                    setGoldSaved(false);
+                  }}
                   rows={12}
                   className="w-full resize-y rounded-2xl border border-white/8 bg-black/20 px-4 py-3 text-sm leading-relaxed text-white/90 outline-none focus:border-accent-admin/30"
                 />
@@ -1195,6 +1266,14 @@ function AdminAiStudioPageInner() {
                 />
               )}
               <div className="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void saveGold()}
+                  disabled={!output.trim() || goldSaved}
+                  className="rounded-full border border-white/15 px-4 py-2 text-sm font-semibold text-white/85 transition hover:bg-white/5 disabled:opacity-40"
+                >
+                  {goldSaved ? "Saved as gold" : "Save as gold"}
+                </button>
                 <button
                   type="button"
                   onClick={() => void promote("template")}

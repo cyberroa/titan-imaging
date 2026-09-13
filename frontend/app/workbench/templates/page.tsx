@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { WorkbenchPageHeader } from "@/components/ui";
+import { EmailHtmlPreview } from "@/components/workbench/EmailHtmlPreview";
 import { ApiError } from "@/lib/api";
 import { apiFetchWithAuth } from '@/lib/api-workbench';
 import { createClient } from "@/lib/supabase/client";
@@ -335,17 +336,9 @@ export default function AdminTemplatesPage() {
       </div>
 
       {preview ? (
-        <div className="mt-10 rounded-xl border border-white/10 bg-background-card p-6">
-          <h2 className="text-lg font-semibold">Preview</h2>
-          <p className="mt-1 text-sm text-text-muted">Subject: {preview.subject}</p>
-          <div
-            className="prose prose-invert mt-4 max-w-none rounded-md border border-white/10 bg-white/5 p-4 text-sm"
-            dangerouslySetInnerHTML={{ __html: preview.html }}
-          />
-          <details className="mt-4 text-xs text-text-muted">
-            <summary className="cursor-pointer">Plain text</summary>
-            <pre className="mt-2 whitespace-pre-wrap">{preview.text}</pre>
-          </details>
+        <div className="mt-10">
+          <h2 className="mb-3 text-lg font-semibold">Preview</h2>
+          <EmailHtmlPreview subject={preview.subject} html={preview.html} text={preview.text} />
         </div>
       ) : null}
     </>

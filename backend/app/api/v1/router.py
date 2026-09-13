@@ -10,7 +10,10 @@ from app.api.v1.routes import (
     workbench_customers,
     workbench_engagement,
     workbench_goals,
+    workbench_graphql,
     workbench_help,
+    workbench_notifications,
+    workbench_mail,
     workbench_payroll,
     workbench_sessions,
     workbench_social,
@@ -36,11 +39,14 @@ api_router.include_router(workbench_ai.router, tags=["workbench-ai"])
 api_router.include_router(workbench_engagement.router, tags=["workbench-engagement"])
 api_router.include_router(workbench_goals.router, tags=["workbench-goals"])
 api_router.include_router(workbench_help.router, tags=["workbench-help"])
+api_router.include_router(workbench_notifications.router, tags=["workbench-notifications"])
 api_router.include_router(workbench_competitors.router, tags=["workbench-competitors"])
 api_router.include_router(workbench_payroll.router, tags=["workbench-payroll"])
 api_router.include_router(workbench_sessions.router, tags=["workbench-sessions"])
 api_router.include_router(workbench_templates.router, tags=["workbench-templates"])
 api_router.include_router(workbench_campaigns.router, tags=["workbench-campaigns"])
+api_router.include_router(workbench_mail.router, tags=["workbench-mail"])
+api_router.include_router(workbench_graphql.router, tags=["workbench-graphql"])
 api_router.include_router(workbench_social.router, tags=["workbench-social"])
 api_router.include_router(inventory_alerts_public.router, tags=["inventory-alerts"])
 api_router.include_router(events_public.router, tags=["activity"])
